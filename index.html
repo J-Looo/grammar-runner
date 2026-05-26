@@ -1,1001 +1,1648 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>語法跑酷 Grammar Runner</title>
     <style>
-        :root {
-            --primary-blue: #3498db;
-            --perfect-gold: #f1c40f;
-            --error-red: #e74c3c;
-            --road-grey: #34495e;
-            --success-green: #2ecc71;
-        }
+      :root {
+        --primary-blue: #3498db;
+        --perfect-gold: #f1c40f;
+        --error-red: #e74c3c;
+        --road-grey: #34495e;
+        --success-green: #2ecc71;
+      }
 
-        body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background-color: #ecf0f1;
-            margin: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            overflow-x: hidden;
-            user-select: none;
-        }
+      body {
+        font-family: "Segoe UI", Arial, sans-serif;
+        background-color: #ecf0f1;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+        overflow-x: hidden;
+        user-select: none;
+      }
 
-        /* --- 頂部：跑酷視覺區 --- */
+      /* --- 頂部：跑酷視覺區 --- */
+      #top-section {
+        width: 100%;
+        height: 40%;
+        background-image: url("assets/pixel-background.png");
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-position: bottom;
+        position: relative;
+        image-rendering: pixelated;
+      }
+
+      #status-bar {
+        position: absolute;
+        top: 10px;
+        width: 100%;
+        padding: 0 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-sizing: border-box;
+        z-index: 10;
+      }
+
+      #timer {
+        font-size: 24px;
+        font-weight: bold;
+        padding: 5px 15px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 20px;
+      }
+
+      #menu-btn {
+        font-size: 20px;
+        padding: 5px 15px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: bold;
+        border: 2px solid #bdc3c7;
+        transition: 0.2s;
+        white-space: nowrap;
+      }
+      #menu-btn:hover {
+        background: white;
+        transform: scale(1.05);
+      }
+
+      .timer-warning {
+        color: orange;
+        animation: blink 0.8s infinite;
+      }
+      .timer-danger {
+        color: red;
+        animation: blink 0.4s infinite;
+        font-size: 28px;
+      }
+
+      #lives {
+        font-size: 24px;
+      }
+
+      #runner {
+        position: absolute;
+        left: 30px;
+        bottom: 20px;
+        z-index: 5;
+        font-size: 0;
+        line-height: 0;
+        transition:
+          left 0.8s ease-in-out,
+          transform 0.3s;
+      }
+
+      #runner-img {
+        width: 180px;
+        height: auto;
+        vertical-align: middle;
+        image-rendering: pixelated;
+      }
+
+      #flag-goal {
+        position: absolute;
+        bottom: 45px;
+        right: 35px;
+        font-size: 0;
+        line-height: 0;
+        transition:
+          right 0.8s ease-in-out,
+          transform 0.2s,
+          opacity 0.3s;
+        z-index: 5;
+      }
+
+      #flag-img {
+        width: 120px;
+        height: auto;
+        image-rendering: pixelated;
+      }
+
+      .flag-bounce {
+        animation: flag-wave 0.3s infinite alternate;
+      }
+
+      #feedback-text {
+        position: absolute;
+        width: 100%;
+        text-align: center;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 65px;
+        font-weight: 900;
+        display: none;
+        z-index: 20;
+        font-family: "Arial Black", Impact, sans-serif;
+        text-shadow:
+          -3px -3px 0 #fff,
+          3px -3px 0 #fff,
+          -3px 3px 0 #fff,
+          3px 3px 0 #fff,
+          -4px 0px 0 #fff,
+          4px 0px 0 #fff,
+          0px -4px 0 #fff,
+          0px 4px 0 #fff,
+          2px 5px 0px rgba(39, 174, 96, 1),
+          3px 6px 0px rgba(39, 174, 96, 1),
+          4px 7px 0px rgba(39, 174, 96, 1),
+          5px 8px 5px rgba(0, 0, 0, 0.4);
+      }
+
+      /* --- 底部操作區 --- */
+      #bottom-section {
+        width: 100%;
+        height: 60%;
+        background: #fff;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .section-label {
+        align-self: flex-start;
+        font-weight: bold;
+        color: #7f8c8d;
+        margin-bottom: 10px;
+      }
+
+      #assembly-line {
+        width: 100%;
+        max-width: 800px;
+        min-height: 80px;
+        background: #f9f9f9;
+        border: 3px dashed #bdc3c7;
+        border-radius: 15px;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 15px;
+        margin-bottom: 30px;
+        position: relative;
+      }
+
+      #word-bank {
+        width: 100%;
+        max-width: 800px;
+        display: flex;
+        justify-content: center;
+        align-content: flex-start;
+        flex-wrap: wrap;
+        gap: 15px;
+        padding-bottom: 20px;
+      }
+
+      .word-magnet {
+        background: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 0px #bdc3c7;
+        border: 2px solid #bdc3c7;
+        cursor: grab;
+        font-size: 20px;
+        font-weight: 600;
+        transition:
+          transform 0.1s,
+          box-shadow 0.1s;
+        touch-action: none;
+      }
+
+      .word-magnet:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0px #bdc3c7;
+        cursor: grabbing;
+      }
+
+      .dragging {
+        opacity: 0.5;
+        transform: scale(1.1);
+      }
+
+      /* --- 彈出視窗共用皮膚 --- */
+      .modal-screen {
+        position: fixed;
+        inset: 0;
+        background: rgba(44, 62, 80, 0.95);
+        color: white;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+        box-sizing: border-box;
+      }
+
+      #wake-screen {
+        background: #2c3e50;
+        cursor: pointer;
+      }
+      #wake-screen h1 {
+        font-size: 32px;
+        animation: heartbeat 1.5s infinite;
+        text-align: center;
+      }
+
+      #cover-screen {
+        background: linear-gradient(135deg, #2c3e50, #1a252f);
+        cursor: pointer;
+      }
+
+      /* 中場解說緩衝視窗 */
+      .explain-box {
+        background: white;
+        color: #2c3e50;
+        padding: 25px 35px;
+        border-radius: 20px;
+        text-align: center;
+        max-width: 600px;
+        width: 85%;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      }
+      .explain-box h2 {
+        color: var(--success-green);
+        margin-top: 0;
+        font-size: 32px;
+      }
+      .explain-ans {
+        font-size: 22px;
+        font-weight: bold;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 5px solid var(--success-green);
+        margin: 20px 0;
+        text-align: left;
+        line-height: 1.5;
+      }
+
+      #pause-screen {
+        position: fixed;
+        inset: 0;
+        background: rgba(44, 62, 80, 0.88);
+        color: white;
+        z-index: 200;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+      }
+      #pause-screen h2 {
+        font-size: 40px;
+        margin-bottom: 30px;
+      }
+
+      .btn-vertical-group {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        width: 220px;
+      }
+
+      textarea {
+        width: 100%;
+        max-width: 500px;
+        height: 250px;
+        margin: 20px 0;
+        font-size: 16px;
+        padding: 10px;
+        border-radius: 10px;
+        border: none;
+        color: #2c3e50;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      button {
+        padding: 15px 40px;
+        font-size: 20px;
+        background: var(--primary-blue);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: 0.3s;
+        font-weight: bold;
+      }
+
+      button:hover {
+        transform: scale(1.05);
+      }
+      button.btn-secondary {
+        background: #7f8c8d;
+      }
+      button.btn-success {
+        background: var(--success-green);
+      }
+      button.btn-warning {
+        background: #e67e22;
+      }
+
+      .info-btn {
+        background: var(--primary-blue);
+        color: white;
+        border: 2px solid white;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        min-width: 30px;
+        min-height: 30px;
+        font-size: 18px;
+        font-weight: bold;
+        font-family: serif;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      }
+
+      #result-screen h2 {
+        font-size: 48px;
+        margin-bottom: 10px;
+      }
+      #score-display {
+        font-size: 32px;
+        color: var(--perfect-gold);
+        font-weight: bold;
+        margin-bottom: 30px;
+      }
+
+      @keyframes blink {
+        50% {
+          opacity: 0.3;
+        }
+      }
+      @keyframes flag-wave {
+        from {
+          transform: scale(1);
+        }
+        to {
+          transform: scale(1.3) rotate(10deg);
+        }
+      }
+      @keyframes heartbeat {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.03);
+        }
+      }
+
+      /* 📱 手機防擠壓響應式魔法 */
+      @media (max-width: 768px) {
         #top-section {
-            width: 100%;
-            height: 40%;
-            background-image: url('assets/pixel-background.png');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-position: bottom;
-            position: relative;
-            image-rendering: pixelated;
+          height: 35% !important;
+          overflow: hidden;
+          position: relative;
         }
-
-        #status-bar {
-            position: absolute;
-            top: 10px;
-            width: 100%;
-            padding: 0 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-            z-index: 10;
-        }
-
-        #timer {
-            font-size: 24px;
-            font-weight: bold;
-            padding: 5px 15px;
-            background: rgba(255,255,255,0.7);
-            border-radius: 20px;
-        }
-
-        #menu-btn {
-            font-size: 20px;
-            padding: 5px 15px;
-            background: rgba(255,255,255,0.7);
-            border-radius: 20px;
-            cursor: pointer;
-            font-weight: bold;
-            border: 2px solid #bdc3c7;
-            transition: 0.2s;
-            white-space: nowrap;
-        }
-        #menu-btn:hover { background: white; transform: scale(1.05); }
-
-        .timer-warning { color: orange; animation: blink 0.8s infinite; }
-        .timer-danger { color: red; animation: blink 0.4s infinite; font-size: 28px; }
-
-        #lives { font-size: 24px; }
-
         #runner {
-            position: absolute;
-            left: 30px;
-            bottom: 20px;
-            z-index: 5;
-            font-size: 0;
-            line-height: 0;
-            transition: left 0.8s ease-in-out, transform 0.3s;
+          left: 50% !important;
+          transform: translateX(-50%) !important;
+          bottom: 12px;
         }
-
-        #runner-img {
-            width: 180px;
-            height: auto;
-            vertical-align: middle;
-            image-rendering: pixelated;
-        }
-
         #flag-goal {
-            position: absolute;
-            bottom: 45px;
-            right: 35px;
-            font-size: 0;
-            line-height: 0;
-            transition: right 0.8s ease-in-out, transform 0.2s, opacity 0.3s;
-            z-index: 5;
+          position: absolute;
+          bottom: 15px;
+          right: -120px;
+          font-size: 0;
+          line-height: 0;
+          z-index: 5;
+          transition:
+            right 0.8s ease-in-out,
+            transform 0.2s,
+            opacity 0.3s;
         }
-
         #flag-img {
-            width: 120px;
-            height: auto;
-            image-rendering: pixelated;
+          width: 65px;
         }
-
-        .flag-bounce {
-            animation: flag-wave 0.3s infinite alternate;
-        }
-
-        #feedback-text {
-            position: absolute;
-            width: 100%;
-            text-align: center;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 65px;
-            font-weight: 900;
-            display: none;
-            z-index: 20;
-            font-family: 'Arial Black', Impact, sans-serif;
-            text-shadow: 
-                -3px -3px 0 #fff,  3px -3px 0 #fff, -3px  3px 0 #fff,  3px  3px 0 #fff,
-                -4px  0px 0 #fff,  4px  0px 0 #fff,  0px -4px 0 #fff,  0px  4px 0 #fff,
-                 2px  5px 0px rgba(39, 174, 96, 1), 3px  6px 0px rgba(39, 174, 96, 1),
-                 4px  7px 0px rgba(39, 174, 96, 1), 5px  8px 5px rgba(0, 0, 0, 0.4);
-        }
-
-        /* --- 底部操作區 --- */
         #bottom-section {
-            width: 100%;
-            height: 60%;
-            background: #fff;
-            padding: 20px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+          height: 65% !important;
+          padding: 10px 15px;
+          overflow: hidden;
         }
-
         .section-label {
-            align-self: flex-start;
-            font-weight: bold;
-            color: #7f8c8d;
-            margin-bottom: 10px;
+          font-size: 13px;
+          margin-bottom: 5px;
         }
-
         #assembly-line {
-            width: 100%;
-            max-width: 800px;
-            min-height: 80px;
-            background: #f9f9f9;
-            border: 3px dashed #bdc3c7;
-            border-radius: 15px;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            padding: 15px;
-            margin-bottom: 30px;
-            position: relative;
+          min-height: 60px;
+          padding: 8px;
+          margin-bottom: 15px;
+          gap: 8px;
         }
-
-        #word-bank {
-            width: 100%;
-            max-width: 800px;
-            display: flex;
-            justify-content: center;
-            align-content: flex-start;
-            flex-wrap: wrap;
-            gap: 15px;
-            padding-bottom: 20px;
-        }
-
         .word-magnet {
-            background: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 0px #bdc3c7;
-            border: 2px solid #bdc3c7;
-            cursor: grab;
-            font-size: 20px;
-            font-weight: 600;
-            transition: transform 0.1s, box-shadow 0.1s;
-            touch-action: none;
+          padding: 6px 14px !important;
+          font-size: 16px !important;
+          box-shadow: 0 3px 0px #bdc3c7;
         }
-
-        .word-magnet:active {
-            transform: translateY(2px);
-            box-shadow: 0 2px 0px #bdc3c7;
-            cursor: grabbing;
+        #word-bank {
+          flex: 1;
+          overflow-y: auto;
+          gap: 8px;
+          padding-bottom: 30px;
+          touch-action: pan-y;
         }
-
-        .dragging { opacity: 0.5; transform: scale(1.1); }
-
-        /* --- 彈出視窗共用皮膚 --- */
-        .modal-screen {
-            position: fixed;
-            inset: 0;
-            background: rgba(44, 62, 80, 0.95);
-            color: white;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            box-sizing: border-box;
-        }
-
-        #wake-screen {
-            background: #2c3e50;
-            cursor: pointer;
-        }
-        #wake-screen h1 { font-size: 32px; animation: heartbeat 1.5s infinite; text-align: center; }
-
-        #cover-screen {
-            background: linear-gradient(135deg, #2c3e50, #1a252f);
-            cursor: pointer;
-        }
-
-        /* 中場解說緩衝視窗 */
-        .explain-box {
-            background: white;
-            color: #2c3e50;
-            padding: 25px 35px;
-            border-radius: 20px;
-            text-align: center;
-            max-width: 600px;
-            width: 85%;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-        .explain-box h2 { color: var(--success-green); margin-top: 0; font-size: 32px; }
-        .explain-ans { font-size: 22px; font-weight: bold; background: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 5px solid var(--success-green); margin: 20px 0; text-align: left; line-height: 1.5; }
-
-        #pause-screen {
-            position: fixed;
-            inset: 0;
-            background: rgba(44, 62, 80, 0.88);
-            color: white;
-            z-index: 200; 
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-        }
-        #pause-screen h2 { font-size: 40px; margin-bottom: 30px; }
-
-        .btn-vertical-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 220px;
-        }
-
-        textarea {
-            width: 100%;
-            max-width: 500px;
-            height: 150px;
-            margin: 20px 0;
-            font-size: 16px;
-            padding: 10px;
-            border-radius: 10px;
-            border: none;
-            color: #2c3e50;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: 20px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        button {
-            padding: 15px 40px;
-            font-size: 20px;
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: 0.3s;
-            font-weight: bold;
-        }
-
-        button:hover { transform: scale(1.05); }
-        button.btn-secondary { background: #7f8c8d; }
-        button.btn-success { background: var(--success-green); }
-        button.btn-warning { background: #e67e22; }
-
-        #result-screen h2 { font-size: 48px; margin-bottom: 10px; }
-        #score-display { font-size: 32px; color: var(--perfect-gold); font-weight: bold; margin-bottom: 30px; }
-
-        @keyframes blink { 50% { opacity: 0.3; } }
-        @keyframes flag-wave { from { transform: scale(1); } to { transform: scale(1.3) rotate(10deg); } }
-        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
-
-        /* 📱 手機防擠壓響應式魔法 */
-        @media (max-width: 768px) {
-            #top-section { height: 35% !important; overflow: hidden; position: relative; }
-            #runner { left: 50% !important; transform: translateX(-50%) !important; bottom: 12px; }
-            #flag-goal { position: absolute; bottom: 15px; right: -120px; font-size: 0; line-height: 0; z-index: 5; transition: right 0.8s ease-in-out, transform 0.2s, opacity 0.3s; }
-            #flag-img { width: 65px; }
-            #bottom-section { height: 65% !important; padding: 10px 15px; overflow: hidden; }
-            .section-label { font-size: 13px; margin-bottom: 5px; }
-            #assembly-line { min-height: 60px; padding: 8px; margin-bottom: 15px; gap: 8px; }
-            .word-magnet { padding: 6px 14px !important; font-size: 16px !important; box-shadow: 0 3px 0px #bdc3c7; }
-            #word-bank { flex: 1; overflow-y: auto; gap: 8px; padding-bottom: 30px; touch-action: pan-y; }
-        }
+      }
     </style>
-</head>
-<body>
-
+  </head>
+  <body>
     <audio id="bgm" src="assets/bgm.mp3" loop></audio>
-    
-    <div id="wake-screen" class="modal-screen" onclick="wakeUpAndPlay()">
-        <h1> Press anywhere on the page to setup </h1>
+
+    <div
+      id="loading-screen"
+      class="modal-screen"
+      style="z-index: 999; background: #2c3e50"
+    >
+      <h1
+        style="
+          font-size: 32px;
+          animation: blink 1.5s infinite;
+          text-align: center;
+          color: var(--perfect-gold);
+        "
+      >
+        ⏳ 載入資源中 Loading... <span id="loading-percent">0%</span>
+      </h1>
     </div>
 
-    <div id="cover-screen" class="modal-screen" style="display: none;" onclick="enterSetupMenu()">
-        <h1 style="font-size: 45px; color: var(--perfect-gold); text-shadow: 3px 3px 0 #000;">🎮 語法跑酷 Grammar Runner</h1>
-        <p class="class-key" style="margin-top: 50px; font-size: 20px; color: var(--perfect-gold); animation: blink 1.2s infinite;">👉 點擊螢幕任何地方進入設定首頁 👈</p>
+    <div
+      id="wake-screen"
+      class="modal-screen"
+      style="display: none"
+      onclick="wakeUpAndPlay()"
+    >
+      <h1>Press anywhere on the page to setup</h1>
     </div>
 
-    <div id="setup-screen" class="modal-screen" style="display: none;" onclick="autoPlayOnFirstClick()">
-        <h1>🎮 語法跑酷 Grammar Runner</h1>
-        <div style="margin: 10px 0;">
-            <button id="bgm-toggle-btn" onclick="toggleWelcomeMusic()" style="padding: 8px 20px; font-size: 14px; background-color: var(--success-green); border-radius: 10px;">🎵 音樂：ON</button>
-        </div>
-        <p>教師模式：請貼入英文句子（一行一句）</p>
-        <p style="font-size:14px; color:#bdc3c7;">💡 提示：若有複數正確答案，請以英文直線 | 隔開。<br>例：Sandy saw a boy pick up the trash... | Sandy saw a boy picking up the trash...</p>
-        <textarea id="import-input" onclick="autoPlayOnFirstClick()" placeholder="請在此輸入英文句子...">Sandy saw a boy pick up the trash from the floor. | Sandy saw a boy picking up the trash from the floor.
+    <div
+      id="cover-screen"
+      class="modal-screen"
+      style="display: none"
+      onclick="enterSetupMenu()"
+    >
+      <h1
+        style="
+          font-size: 45px;
+          color: var(--perfect-gold);
+          text-shadow: 3px 3px 0 #000;
+        "
+      >
+        🎮 語法跑酷 Grammar Runner
+      </h1>
+      <p
+        class="class-key"
+        style="
+          margin-top: 50px;
+          font-size: 20px;
+          color: var(--perfect-gold);
+          animation: blink 1.2s infinite;
+        "
+      >
+        👉 點擊螢幕任何地方進入設定首頁 👈
+      </p>
+    </div>
+
+    <div
+      id="setup-screen"
+      class="modal-screen"
+      style="display: none"
+      onclick="autoPlayOnFirstClick()"
+    >
+      <h1>🎮 語法跑酷 Grammar Runner</h1>
+      <div style="margin: 10px 0">
+        <button
+          id="bgm-toggle-btn"
+          onclick="toggleWelcomeMusic()"
+          style="
+            padding: 8px 20px;
+            font-size: 14px;
+            background-color: var(--success-green);
+            border-radius: 10px;
+          "
+        >
+          🎵 音樂：ON
+        </button>
+      </div>
+      <div
+        style="display: flex; align-items: center; gap: 10px; margin-top: 15px"
+      >
+        <span style="font-size: 18px; font-weight: bold">📝 句子題庫輸入</span>
+        <button
+          class="info-btn"
+          onclick="openInfoModal(event)"
+          title="點擊查看輸入說明"
+        >
+          i
+        </button>
+      </div>
+      <textarea
+        id="import-input"
+        onclick="autoPlayOnFirstClick()"
+        placeholder="請在此輸入英文句子..."
+      >
+Sandy saw a boy pick up the trash from the floor. | Sandy saw a boy picking up the trash from the floor.
 She goes to the park every morning.
-The dog barks at the mailman every day.</textarea>
+The dog barks at the mailman every day.</textarea
+      >
 
-        <p style="margin: 15px 0 5px 0; font-weight: bold; align-self: flex-start; color: white;">➋ 課堂隨機叫號機參數設置：</p>
-        <div style="background: rgba(255,255,255,0.1); padding: 15px 25px; border-radius: 12px; margin-bottom: 20px; display: flex; gap: 15px; align-items: center; border: 1px dashed rgba(255,255,255,0.3); color: white; width: 100%; max-width: 500px; box-sizing: border-box;">
-            <span>座號：</span>
-            <input type="number" id="roll-min" value="1" min="1" style="width: 60px; padding: 5px; font-size: 16px; border-radius: 5px; border: none; text-align: center; color: #2c3e50;">
-            <span>到</span>
-            <input type="number" id="roll-max" value="30" min="1" style="width: 60px; padding: 5px; font-size: 16px; border-radius: 5px; border: none; text-align: center; color: #2c3e50;">
-            <span>號</span>
-            <span style="margin-left: 15px;">抽：</span>
-            <input type="number" id="roll-count" value="1" min="1" max="5" style="width: 50px; padding: 5px; font-size: 16px; border-radius: 5px; border: none; text-align: center; color: #2c3e50;">
-            <span>人</span>
-        </div>
+      <p
+        style="
+          margin: 15px 0 5px 0;
+          font-weight: bold;
+          color: white;
+          text-align: center;
+        "
+      >
+        課堂隨機叫號機參數設置：
+      </p>
+      <div
+        style="
+          background: rgba(255, 255, 255, 0.1);
+          padding: 15px 25px;
+          border-radius: 12px;
+          margin-bottom: 20px;
+          display: flex;
+          gap: 15px;
+          align-items: center;
+          justify-content: center;
+          flex-wrap: wrap;
+          border: 1px dashed rgba(255, 255, 255, 0.3);
+          color: white;
+          width: 100%;
+          max-width: 500px;
+          box-sizing: border-box;
+        "
+      >
+        <span>座號：</span>
+        <input
+          type="number"
+          id="roll-min"
+          value="1"
+          min="1"
+          style="
+            width: 60px;
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+            color: #2c3e50;
+          "
+        />
+        <span>到</span>
+        <input
+          type="number"
+          id="roll-max"
+          value="30"
+          min="1"
+          style="
+            width: 60px;
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+            color: #2c3e50;
+          "
+        />
+        <span>號</span>
+        <span style="margin-left: 15px">抽：</span>
+        <input
+          type="number"
+          id="roll-count"
+          value="1"
+          min="1"
+          max="5"
+          style="
+            width: 50px;
+            padding: 5px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: none;
+            text-align: center;
+            color: #2c3e50;
+          "
+        />
+        <span>人</span>
+      </div>
 
-        <button onclick="initGame()">開始教學跑酷</button>
+      <button onclick="initGame()">開始教學跑酷</button>
     </div>
 
-    <div id="roll-screen" class="modal-screen" style="display: none; background: #16a085;">
-        <h1 style="font-size: 36px; color: white; margin-bottom: 10px;">🎲 課堂隨機抽點答題生</h1>
-        <p style="color: rgba(255,255,255,0.8); margin: 0 0 20px 0; font-size: 16px;">💡 若特定學生缺席，可點擊號碼下方的按鈕單獨重新抽選</p>
-        
-        <div id="roll-container" style="display: flex; gap: 25px; justify-content: center; align-items: flex-start; min-height: 200px; margin-bottom: 30px; width: 100%; flex-wrap: wrap;">
-            <div id="roll-box" style="font-size: 70px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000;">🎲 點擊開始抽選</div>
-        </div>
+    <div
+      id="roll-screen"
+      class="modal-screen"
+      style="display: none; background: #16a085"
+    >
+      <h1 style="font-size: 36px; color: white; margin-bottom: 10px">
+        🎲 課堂隨機抽點答題生
+      </h1>
+      <p
+        style="
+          color: rgba(255, 255, 255, 0.8);
+          margin: 0 0 20px 0;
+          font-size: 16px;
+        "
+      >
+        💡 若特定學生缺席，可點擊號碼下方的按鈕單獨重新抽選
+      </p>
 
+      <div
+        id="roll-container"
+        style="
+          display: flex;
+          gap: 25px;
+          justify-content: center;
+          align-items: flex-start;
+          min-height: 200px;
+          margin-bottom: 30px;
+          width: 100%;
+          flex-wrap: wrap;
+        "
+      >
+        <div
+          id="roll-box"
+          style="
+            font-size: 70px;
+            font-weight: 900;
+            color: var(--perfect-gold);
+            text-shadow: 3px 3px 0px #000;
+          "
+        >
+          🎲 點擊開始抽選
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button
+          style="background-color: #e67e22"
+          id="roll-action-btn"
+          onclick="startRollingEffect()"
+        >
+          開始全體抽號！
+        </button>
+        <button
+          class="btn-success"
+          id="roll-go-btn"
+          onclick="exitRollAndStartGame()"
+          style="display: none"
+        >
+          號碼就緒，準備跑酷 運行 🏃‍♂️
+        </button>
+      </div>
+    </div>
+
+    <div id="explain-screen" class="modal-screen" style="display: none">
+      <div class="explain-box">
+        <h2>✨ PERFECT! 答對了 ✨</h2>
+        <p style="font-size: 16px; color: #7f8c8d; margin-bottom: 5px">
+          本題標準核心句型：
+        </p>
+        <div id="explain-text" class="explain-ans"></div>
         <div class="btn-group">
-            <button style="background-color: #e67e22;" id="roll-action-btn" onclick="startRollingEffect()">開始全體抽號！</button>
-            <button class="btn-success" id="roll-go-btn" onclick="exitRollAndStartGame()" style="display: none;">號碼就緒，準備跑酷 運行 🏃‍♂️</button>
+          <button class="btn-success" onclick="triggerNextFromBuffer()">
+            下一題 ➡️
+          </button>
+          <button class="btn-warning" onclick="triggerRetryFromBuffer()">
+            再次挑戰 🔄
+          </button>
+          <button class="btn-secondary" onclick="triggerBackFromBuffer()">
+            返回標題首頁 🏠
+          </button>
         </div>
+      </div>
     </div>
 
-    <div id="explain-screen" class="modal-screen" style="display: none;">
-        <div class="explain-box">
-            <h2>✨ PERFECT! 答對了 ✨</h2>
-            <p style="font-size: 16px; color: #7f8c8d; margin-bottom: 5px;">本題標準核心句型：</p>
-            <div id="explain-text" class="explain-ans"></div>
-            <div class="btn-group">
-                <button class="btn-success" onclick="triggerNextFromBuffer()">下一題 ➡️</button>
-                <button class="btn-warning" onclick="triggerRetryFromBuffer()">再次挑戰 🔄</button>
-                <button class="btn-secondary" onclick="triggerBackFromBuffer()">返回標題首頁 🏠</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="result-screen" class="modal-screen" style="display: none;">
-        <h2 id="result-title">挑戰結束</h2>
-        <div id="score-display">得分：0 / 0</div>
-        <div class="btn-group">
-            <button class="btn-success" onclick="restartGame()">重新來過</button>
-            <button class="btn-secondary" onclick="goBackToSetup()">回到出題首頁</button>
-        </div>
+    <div id="result-screen" class="modal-screen" style="display: none">
+      <h2 id="result-title">挑戰結束</h2>
+      <div id="score-display">得分：0 / 0</div>
+      <div class="btn-group">
+        <button class="btn-success" onclick="restartGame()">重新來過</button>
+        <button class="btn-secondary" onclick="goBackToSetup()">
+          回到出題首頁
+        </button>
+      </div>
     </div>
 
     <div id="top-section">
-        <div id="status-bar">
-            <div id="timer">⏱️ Time Left: --s</div>
-            <div id="menu-btn" onclick="openPauseMenu()">⚙️ 選單</div>
-            <div id="lives">❤️❤️</div>
-        </div>
-        <div id="runner"><img src="assets/pixel-runner.png" id="runner-img" alt="runner"></div>
-        <div id="flag-goal"><img src="assets/pixel-flag.png" id="flag-img" alt="goal"></div>
-        <div id="feedback-text">PERFECT!</div>
+      <div id="status-bar">
+        <div id="timer">⏱️ Time Left: --s</div>
+        <div id="menu-btn" onclick="openPauseMenu()">⚙️ 選單</div>
+        <div id="lives">❤️❤️</div>
+      </div>
+      <div id="runner">
+        <img src="assets/pixel-runner.png" id="runner-img" alt="runner" />
+      </div>
+      <div id="flag-goal">
+        <img src="assets/pixel-flag.png" id="flag-img" alt="goal" />
+      </div>
+      <div id="feedback-text">PERFECT!</div>
     </div>
 
     <div id="bottom-section">
-        <div class="section-label">【 句子組裝線 】</div>
-        <div id="assembly-line"></div>
-        <div class="section-label">【 打亂的單字磁鐵庫 】</div>
-        <div id="word-bank"></div>
+      <div class="section-label">【 句子組裝線 】</div>
+      <div id="assembly-line"></div>
+      <div class="section-label">【 打亂的單字磁鐵庫 】</div>
+      <div id="word-bank"></div>
+    </div>
+
+    <div
+      id="info-modal"
+      class="modal-screen"
+      style="display: none; z-index: 9999; background: rgba(0, 0, 0, 0.8)"
+      onclick="closeInfoModal()"
+    >
+      <div
+        class="explain-box"
+        style="
+          text-align: left;
+          color: #2c3e50;
+          line-height: 1.6;
+          padding: 30px 40px;
+        "
+        onclick="event.stopPropagation()"
+      >
+        <h2
+          style="
+            color: var(--primary-blue);
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-size: 28px;
+          "
+        >
+          📝 題庫輸入說明
+        </h2>
+        <p style="margin-bottom: 10px">
+          <strong>1. 基本規則：</strong
+          ><br />請貼入英文句子，<strong>一行一句</strong>。
+        </p>
+        <p style="margin-bottom: 10px">
+          <strong>2. 多重解答：</strong><br />若有複數正確答案，請以英文直線
+          <code
+            style="
+              background: #e0e0e0;
+              padding: 2px 6px;
+              border-radius: 4px;
+              font-weight: bold;
+            "
+            >|</code
+          >
+          隔開。
+        </p>
+        <div
+          style="
+            font-size: 14px;
+            background: #f1f2f6;
+            padding: 12px;
+            border-radius: 8px;
+            color: #34495e;
+            border-left: 4px solid var(--perfect-gold);
+          "
+        >
+          💡 <strong>舉例來說：</strong><br />
+          Sandy saw a boy pick up the trash.<br />
+          |<br />
+          Sandy saw a boy picking up the trash.
+        </div>
+        <div style="text-align: center; margin-top: 25px">
+          <button onclick="closeInfoModal()">我了解了</button>
+        </div>
+      </div>
     </div>
 
     <script>
-        // --- 4. 音樂喚醒與封面控制大腦 ---
-        function wakeUpAndPlay() {
-            const music = document.getElementById('bgm');
-            if (music) {
-                music.volume = 0.30;
-                music.play().catch(e => console.log("解鎖聲音"));
+      // --- 0. 資源預載系統 (Preloader) ---
+      const assetsToPreload = [
+        "assets/bgm.mp3",
+        "assets/pixel-background.png",
+        "assets/pixel-runner.png",
+        "assets/pixel-flag.png",
+      ];
+
+      window.addEventListener("load", () => {
+        let loadedAssetsCount = 0;
+
+        const completeLoading = () => {
+          const loadingScreen = document.getElementById("loading-screen");
+          if (loadingScreen && loadingScreen.style.display !== "none") {
+            loadingScreen.style.display = "none";
+            document.getElementById("wake-screen").style.display = "flex";
+          }
+        };
+
+        const handleAssetLoad = () => {
+          loadedAssetsCount++;
+
+          // 計算目前的百分比 (無條件捨去小數點)
+          const percent = Math.floor(
+            (loadedAssetsCount / assetsToPreload.length) * 100,
+          );
+          const percentText = document.getElementById("loading-percent");
+          if (percentText) {
+            percentText.textContent = percent + "%";
+          }
+
+          if (loadedAssetsCount >= assetsToPreload.length) completeLoading();
+        };
+
+        if (assetsToPreload.length === 0) {
+          completeLoading();
+          return;
+        }
+
+        assetsToPreload.forEach((src) => {
+          if (src.endsWith(".mp3")) {
+            const audio = new Audio();
+            audio.addEventListener("canplaythrough", handleAssetLoad, {
+              once: true,
+            });
+            audio.addEventListener("error", handleAssetLoad, { once: true }); // 遇到錯誤也當作完成，避免卡死
+            audio.src = src;
+          } else {
+            const img = new Image();
+            img.onload = handleAssetLoad;
+            img.onerror = handleAssetLoad;
+            img.src = src;
+          }
+        });
+
+        // 安全機制：避免網路問題導致某個資源卡死，設定 8 秒後強制進入初始畫面
+        setTimeout(completeLoading, 8000);
+      });
+
+      // --- 4. 音樂喚醒與封面控制大腦 ---
+      function wakeUpAndPlay() {
+        const music = document.getElementById("bgm");
+        if (music) {
+          music.volume = 0.3;
+          music.play().catch((e) => console.log("解鎖聲音"));
+        }
+        document.getElementById("wake-screen").style.display = "none";
+        document.getElementById("cover-screen").style.display = "flex";
+      }
+
+      function enterSetupMenu() {
+        document.getElementById("cover-screen").style.display = "none";
+        document.getElementById("setup-screen").style.display = "flex";
+      }
+
+      function autoPlayOnFirstClick() {
+        const music = document.getElementById("bgm");
+        if (music && music.paused) {
+          music.volume = 0.3;
+          music
+            .play()
+            .then(() => {
+              const btn = document.getElementById("bgm-toggle-btn");
+              if (btn) {
+                btn.textContent = "🎵 音樂：ON";
+                btn.style.backgroundColor = "var(--success-green)";
+              }
+              document
+                .getElementById("setup-screen")
+                .removeAttribute("onclick");
+            })
+            .catch((e) => console.log("互動解鎖"));
+        }
+      }
+
+      function toggleWelcomeMusic() {
+        const music = document.getElementById("bgm");
+        const btn = document.getElementById("bgm-toggle-btn");
+        if (!music || !btn) return;
+        if (music.paused) {
+          music.volume = 0.3;
+          music.play().then(() => {
+            btn.textContent = "🎵 音樂：ON";
+            btn.style.backgroundColor = "var(--success-green)";
+          });
+        } else {
+          music.pause();
+          btn.textContent = "🎵 音樂：OFF";
+          btn.style.backgroundColor = "#e67e22";
+        }
+      }
+
+      function openInfoModal(event) {
+        if (event) event.stopPropagation();
+        document.getElementById("info-modal").style.display = "flex";
+      }
+
+      function closeInfoModal() {
+        document.getElementById("info-modal").style.display = "none";
+      }
+
+      // 系統變數大腦
+      let rawInputLines = [];
+      let currentIdx = 0;
+      let lives = 2;
+      let timer = null;
+      let timeLeft = 0;
+      let currentLevelAnswers = [];
+      let uniqueWordsPool = [];
+      let score = 0;
+      let totalQuestions = 0;
+      let activeDragElement = null;
+
+      let isRolling = false;
+      let countdownTimer = null;
+      let finalRollResults = [];
+
+      function openPauseMenu() {
+        if (document.getElementById("setup-screen").style.display !== "none")
+          return;
+        if (document.getElementById("roll-screen").style.display !== "none")
+          return;
+        if (document.getElementById("explain-screen").style.display !== "none")
+          return;
+        if (document.getElementById("result-screen").style.display !== "none")
+          return;
+        clearInterval(timer);
+        document.getElementById("pause-screen").style.display = "flex";
+      }
+
+      function closePauseMenu() {
+        document.getElementById("pause-screen").style.display = "none";
+        startTimer();
+      }
+
+      function triggerMenuRestart() {
+        document.getElementById("pause-screen").style.display = "none";
+        restartGame();
+      }
+
+      function triggerMenuBack() {
+        document.getElementById("pause-screen").style.display = "none";
+        goBackToSetup();
+      }
+
+      function initGame() {
+        const input = document.getElementById("import-input").value.trim();
+        if (!input) {
+          alert("請輸入至少一個句子！");
+          return;
+        }
+
+        try {
+          const music = document.getElementById("bgm");
+          music.volume = 0.1;
+          if (music.paused) music.play().catch((e) => console.log("音樂受阻"));
+        } catch (e) {}
+
+        rawInputLines = input.split("\n").filter((s) => s.trim().length > 0);
+        totalQuestions = rawInputLines.length;
+        currentIdx = 0;
+        score = 0;
+        lives = 2;
+
+        document.getElementById("setup-screen").style.display = "none";
+        document.getElementById("result-screen").style.display = "none";
+        document.getElementById("pause-screen").style.display = "none";
+        updateLivesDisplay();
+
+        // 轉向叫號拉霸畫面
+        document.getElementById("roll-screen").style.display = "flex";
+        document.getElementById("roll-container").innerHTML =
+          '<div id="roll-box" style="font-size: 65px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000;">🎲 點擊開始全體抽選</div>';
+        document.getElementById("roll-action-btn").textContent =
+          "開始全體抽號！";
+        document.getElementById("roll-action-btn").style.display =
+          "inline-block";
+        document.getElementById("roll-go-btn").style.display = "none";
+      }
+
+      // 🎰 叫號拉霸與單獨重抽核心
+      function startRollingEffect() {
+        if (isRolling) return;
+        isRolling = true;
+
+        const min = parseInt(document.getElementById("roll-min").value) || 1;
+        const max = parseInt(document.getElementById("roll-max").value) || 30;
+        const count =
+          parseInt(document.getElementById("roll-count").value) || 1;
+
+        if (min > max) {
+          alert("最小座號不能大於最大座號！");
+          isRolling = false;
+          return;
+        }
+
+        document.getElementById("roll-action-btn").style.display = "none";
+        document.getElementById("roll-go-btn").style.display = "none";
+
+        const container = document.getElementById("roll-container");
+        container.innerHTML = "";
+
+        let tempBoxes = [];
+        for (let i = 0; i < count; i++) {
+          const box = document.createElement("div");
+          box.style =
+            "font-size: 80px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000; min-width: 120px; text-align: center; line-height: 1.2;";
+          box.textContent = "--";
+          container.appendChild(box);
+          tempBoxes.push(box);
+        }
+
+        let times = 0;
+        const interval = setInterval(() => {
+          tempBoxes.forEach((box) => {
+            box.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
+          });
+          playSystemSound("tick");
+          times++;
+
+          if (times > 12) {
+            clearInterval(interval);
+            isRolling = false;
+
+            finalRollResults = [];
+            for (let i = 0; i < count; i++) {
+              finalRollResults.push(
+                Math.floor(Math.random() * (max - min + 1)) + min,
+              );
             }
-            document.getElementById('wake-screen').style.display = 'none';
-            document.getElementById('cover-screen').style.display = 'flex';
+            renderRollCards();
+          }
+        }, 80);
+      }
+
+      function renderRollCards() {
+        const container = document.getElementById("roll-container");
+        container.innerHTML = "";
+
+        finalRollResults.forEach((num, index) => {
+          const cardWrapper = document.createElement("div");
+          cardWrapper.style =
+            "display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(0,0,0,0.2); padding: 15px 25px; border-radius: 15px; min-width: 140px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.1);";
+
+          const numBox = document.createElement("div");
+          numBox.style =
+            "font-size: 85px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000; line-height: 1.1;";
+          numBox.textContent = num;
+          cardWrapper.appendChild(numBox);
+
+          if (finalRollResults.length > 1) {
+            const singleRetryBtn = document.createElement("button");
+            singleRetryBtn.style =
+              "padding: 6px 12px; font-size: 14px; background-color: #e67e22; border-radius: 8px; white-space: nowrap; font-weight: bold; min-width: 90px;";
+            singleRetryBtn.textContent = "🔄 重抽此號";
+            singleRetryBtn.onclick = () => rerollSingleStudent(index);
+            cardWrapper.appendChild(singleRetryBtn);
+          }
+
+          container.appendChild(cardWrapper);
+        });
+
+        playSystemSound("correct");
+
+        const actionBtn = document.getElementById("roll-action-btn");
+        actionBtn.textContent = "🔄 全體重新抽號";
+        actionBtn.style.display = "inline-block";
+        document.getElementById("roll-go-btn").style.display = "inline-block";
+      }
+
+      function rerollSingleStudent(targetIndex) {
+        if (isRolling) return;
+        isRolling = true;
+
+        const min = parseInt(document.getElementById("roll-min").value) || 1;
+        const max = parseInt(document.getElementById("roll-max").value) || 30;
+
+        const container = document.getElementById("roll-container");
+        const targetCard = container.children[targetIndex];
+        const numBox = targetCard.querySelector("div");
+        const btn = targetCard.querySelector("button");
+
+        if (btn) btn.style.display = "none";
+
+        let times = 0;
+        const interval = setInterval(() => {
+          numBox.textContent =
+            Math.floor(Math.random() * (max - min + 1)) + min;
+          playSystemSound("tick");
+          times++;
+
+          if (times > 10) {
+            clearInterval(interval);
+            isRolling = false;
+            const newNum = Math.floor(Math.random() * (max - min + 1)) + min;
+            finalRollResults[targetIndex] = newNum;
+            renderRollCards();
+          }
+        }, 80);
+      }
+
+      // 🚀 3. 退出叫號，解鎖全螢幕 321 倒數大機制
+      function exitRollAndStartGame() {
+        document.getElementById("roll-screen").style.display = "none";
+
+        let countdownOverlay = document.getElementById("countdown-overlay");
+        if (!countdownOverlay) {
+          countdownOverlay = document.createElement("div");
+          countdownOverlay.id = "countdown-overlay";
+          countdownOverlay.style =
+            "position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:300; display:flex; align-items:center; justify-content:center; font-size:120px; font-weight:900; color:var(--perfect-gold); text-shadow:4px 4px 0 #000;";
+          document.body.appendChild(countdownOverlay);
         }
 
-        function enterSetupMenu() {
-            document.getElementById('cover-screen').style.display = 'none';
-            document.getElementById('setup-screen').style.display = 'flex';
+        countdownOverlay.style.display = "flex";
+        countdownOverlay.textContent = "3";
+        playSystemSound("drag");
+
+        let num = 3;
+        countdownTimer = setInterval(() => {
+          num--;
+          if (num === 2) {
+            countdownOverlay.textContent = "2";
+            playSystemSound("drag");
+          } else if (num === 1) {
+            countdownOverlay.textContent = "1";
+            playSystemSound("drag");
+          } else if (num === 0) {
+            countdownOverlay.textContent = "GO!🏃‍♂️";
+            playSystemSound("correct");
+          } else {
+            clearInterval(countdownTimer);
+            countdownOverlay.style.display = "none";
+            loadLevel(); // 正式啟動關卡賽道！
+          }
+        }, 800);
+      }
+
+      function loadLevel() {
+        if (currentIdx >= totalQuestions) {
+          showFinalResults(true);
+          return;
         }
 
-        function autoPlayOnFirstClick() {
-            const music = document.getElementById('bgm');
-            if (music && music.paused) {
-                music.volume = 0.30;
-                music.play().then(() => {
-                    const btn = document.getElementById('bgm-toggle-btn');
-                    if (btn) { btn.textContent = "🎵 音樂：ON"; btn.style.backgroundColor = "var(--success-green)"; }
-                    document.getElementById('setup-screen').removeAttribute('onclick');
-                }).catch(e => console.log("互動解鎖"));
+        const r = document.getElementById("runner");
+        const flagGoal = document.getElementById("flag-goal");
+
+        if (window.innerWidth > 768) {
+          r.style.left = "100px";
+          flagGoal.style.right = "35px";
+        } else {
+          r.style.left = "50%";
+          flagGoal.style.right = "-120px";
+        }
+        flagGoal.style.opacity = "1";
+        flagGoal.style.transform = "scale(1)";
+        flagGoal.classList.remove("flag-bounce");
+
+        const currentLine = rawInputLines[currentIdx].trim();
+        parseSlashSentence(currentLine);
+
+        timeLeft = 60;
+        updateTimerDisplay();
+        startTimer();
+
+        const assemblyLine = document.getElementById("assembly-line");
+        const wordBank = document.getElementById("word-bank");
+        assemblyLine.innerHTML = "";
+        wordBank.innerHTML = "";
+
+        const shuffled = [...uniqueWordsPool].sort(() => Math.random() - 0.5);
+        shuffled.forEach((word) => {
+          const magnet = document.createElement("div");
+          magnet.className = "word-magnet";
+          magnet.textContent = word;
+          magnet.draggable = true;
+          bindDragAndTouchEvents(magnet);
+          wordBank.appendChild(magnet);
+        });
+
+        initContainerEvents();
+      }
+
+      function parseSlashSentence(line) {
+        let separator = line.includes("|") ? "|" : "/";
+        if (
+          line.includes("|") ||
+          (line.includes("/") && !line.includes(" / "))
+        ) {
+          const alternatives = line.split(separator).map((s) => s.trim());
+          currentLevelAnswers = alternatives.map((sentence) =>
+            sentence.split(/\s+/),
+          );
+          uniqueWordsPool = [...currentLevelAnswers[0]];
+        } else {
+          const tokens = line.split(/\s+/);
+          currentLevelAnswers = [tokens];
+          uniqueWordsPool = [...tokens];
+        }
+      }
+
+      function checkAnswer() {
+        const currentWords = [
+          ...document
+            .getElementById("assembly-line")
+            .querySelectorAll(".word-magnet"),
+        ].map((el) => el.textContent.trim());
+        if (currentWords.length === 0) return;
+        const isCorrect = currentLevelAnswers.some((ansArr) => {
+          if (currentWords.length !== ansArr.length) return false;
+          return JSON.stringify(currentWords) === JSON.stringify(ansArr);
+        });
+        if (isCorrect) handleSuccess();
+      }
+
+      function handleSuccess() {
+        clearInterval(timer);
+        score++;
+        playSystemSound("correct");
+
+        const flagGoal = document.getElementById("flag-goal");
+        const runner = document.getElementById("runner");
+
+        if (window.innerWidth <= 768) {
+          const targetRight = window.innerWidth / 2 - 25;
+          flagGoal.style.right = targetRight + "px";
+          setTimeout(() => {
+            flagGoal.classList.add("flag-bounce");
+            showFeedback("PERFECT!", "var(--success-green)");
+            setTimeout(openExplainBufferWindow, 1200);
+          }, 800);
+        } else {
+          const goalLeft = flagGoal.offsetLeft;
+          runner.style.left = goalLeft - 10 + "px";
+          setTimeout(() => {
+            flagGoal.classList.add("flag-bounce");
+            showFeedback("PERFECT!", "var(--success-green)");
+            setTimeout(openExplainBufferWindow, 1200);
+          }, 800);
+        }
+      }
+
+      function openExplainBufferWindow() {
+        const standardString = rawInputLines[currentIdx]
+          .trim()
+          .replace(/\|/g, " 或是 ");
+        document.getElementById("explain-text").textContent = standardString;
+        document.getElementById("explain-screen").style.display = "flex";
+      }
+
+      function triggerNextFromBuffer() {
+        document.getElementById("explain-screen").style.display = "none";
+        currentIdx++;
+        if (currentIdx >= totalQuestions) {
+          showFinalResults(true);
+        } else {
+          // 自動跳轉到叫號畫面，進行下一題的抽點
+          document.getElementById("roll-screen").style.display = "flex";
+          document.getElementById("roll-container").innerHTML =
+            '<div id="roll-box" style="font-size: 65px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000;">🎲 點擊開始全體抽選</div>';
+          document.getElementById("roll-action-btn").textContent =
+            "開始全體抽號！";
+          document.getElementById("roll-action-btn").style.display =
+            "inline-block";
+          document.getElementById("roll-go-btn").style.display = "none";
+        }
+      }
+
+      function triggerRetryFromBuffer() {
+        document.getElementById("explain-screen").style.display = "none";
+        score--;
+        loadLevel(); // 原地刷題倒數重考
+      }
+
+      function triggerBackFromBuffer() {
+        document.getElementById("explain-screen").style.display = "none";
+        goBackToSetup();
+      }
+
+      function handleFail(reason) {
+        clearInterval(timer);
+        lives--;
+        updateLivesDisplay();
+        playSystemSound("wrong");
+        showFeedback("WRONG!", "var(--error-red)");
+        tripRunner();
+
+        const assemblyLine = document.getElementById("assembly-line");
+        const standardCorrect = currentLevelAnswers[0];
+        assemblyLine.innerHTML = standardCorrect
+          .map(
+            (w) =>
+              `<div class="word-magnet" style="border-color:var(--perfect-gold); pointer-events:none;">${w}</div>`,
+          )
+          .join("");
+
+        if (lives < 0) {
+          setTimeout(() => {
+            showFinalResults(false);
+          }, 1800);
+        } else {
+          setTimeout(openExplainBufferWindow, 2000);
+        }
+      }
+
+      function showFinalResults(isWin) {
+        clearInterval(timer);
+        document.getElementById("bgm").pause();
+        const resultScreen = document.getElementById("result-screen");
+        const resultTitle = document.getElementById("result-title");
+        const scoreDisplay = document.getElementById("score-display");
+
+        if (isWin) {
+          resultTitle.textContent = "🎉 挑戰成功！";
+          resultTitle.style.color = "var(--success-green)";
+        } else {
+          resultTitle.textContent = "❌ GAME OVER";
+          resultTitle.style.color = "var(--error-red)";
+        }
+        scoreDisplay.textContent = `最終得分：${score} / ${totalQuestions} 題`;
+        resultScreen.style.display = "flex";
+      }
+
+      function restartGame() {
+        currentIdx = 0;
+        score = 0;
+        lives = 2;
+        document.getElementById("result-screen").style.display = "none";
+        initGame();
+      }
+
+      function goBackToSetup() {
+        document.getElementById("result-screen").style.display = "none";
+        document.getElementById("setup-screen").style.display = "flex";
+        try {
+          const music = document.getElementById("bgm");
+          music.volume = 0.3;
+          if (music.paused) music.play();
+        } catch (e) {}
+      }
+
+      function startTimer() {
+        if (timer) clearInterval(timer);
+        timer = setInterval(() => {
+          timeLeft--;
+          updateTimerDisplay();
+          if (timeLeft <= 5 && timeLeft > 0) playSystemSound("tick");
+          if (timeLeft <= 0) handleFail("TIME OUT!");
+        }, 1000);
+      }
+
+      function updateTimerDisplay() {
+        const timerEl = document.getElementById("timer");
+        if (timerEl) {
+          timerEl.textContent = `⏱️ Time Left: ${timeLeft}s`;
+          timerEl.classList.remove("timer-warning", "timer-danger");
+          if (timeLeft <= 10) timerEl.classList.add("timer-warning");
+          if (timeLeft <= 5) timerEl.classList.add("timer-danger");
+        }
+      }
+
+      function updateLivesDisplay() {
+        document.getElementById("lives").textContent =
+          "❤️".repeat(Math.max(0, lives)) + "💔".repeat(Math.max(0, 2 - lives));
+      }
+
+      function showFeedback(text, color) {
+        const f = document.getElementById("feedback-text");
+        f.textContent = text;
+        f.style.color = color;
+        f.style.display = "block";
+        setTimeout(() => (f.style.display = "none"), 1500);
+      }
+
+      function tripRunner() {
+        const r = document.getElementById("runner");
+        r.style.transform = "rotate(-90deg) translateY(20px)";
+        setTimeout(() => {
+          r.style.transform = "none";
+        }, 2000);
+      }
+
+      function bindDragAndTouchEvents(element) {
+        element.addEventListener("dragstart", () => {
+          element.classList.add("dragging");
+          activeDragElement = element;
+          playSystemSound("drag");
+        });
+        element.addEventListener("dragend", () => {
+          element.classList.remove("dragging");
+          activeDragElement = null;
+          playSystemSound("drop");
+          checkAnswer();
+        });
+        element.addEventListener(
+          "touchstart",
+          (e) => {
+            element.classList.add("dragging");
+            activeDragElement = element;
+            playSystemSound("drag");
+          },
+          { passive: true },
+        );
+        element.addEventListener(
+          "touchmove",
+          (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            element.style.position = "fixed";
+            element.style.left = touch.clientX - 40 + "px";
+            element.style.top = touch.clientY - 20 + "px";
+            element.style.zIndex = "1000";
+            const assemblyLine = document.getElementById("assembly-line");
+            const rect = assemblyLine.getBoundingClientRect();
+            if (
+              touch.clientX >= rect.left &&
+              touch.clientX <= rect.right &&
+              touch.clientY >= rect.top &&
+              touch.clientY <= rect.bottom
+            ) {
+              const afterElement = getDragAfterElement(
+                assemblyLine,
+                touch.clientX,
+                touch.clientY,
+              );
+              if (afterElement == null) {
+                assemblyLine.appendChild(element);
+              } else {
+                assemblyLine.insertBefore(element, afterElement);
+              }
             }
-        }
+          },
+          { passive: false },
+        );
+        element.addEventListener("touchend", () => {
+          element.classList.remove("dragging");
+          element.style.position = "static";
+          element.style.zIndex = "auto";
+          const wordBank = document.getElementById("word-bank");
+          const assemblyLine = document.getElementById("assembly-line");
+          if (!assemblyLine.contains(element)) {
+            wordBank.appendChild(element);
+          }
+          activeDragElement = null;
+          playSystemSound("drop");
+          checkAnswer();
+        });
+      }
 
-        function toggleWelcomeMusic() {
-            const music = document.getElementById('bgm');
-            const btn = document.getElementById('bgm-toggle-btn');
-            if (!music || !btn) return;
-            if (music.paused) {
-                music.volume = 0.30;
-                music.play().then(() => { btn.textContent = "🎵 音樂：ON"; btn.style.backgroundColor = "var(--success-green)"; });
+      function initContainerEvents() {
+        const assemblyLine = document.getElementById("assembly-line");
+        const wordBank = document.getElementById("word-bank");
+        assemblyLine.ondragover = (e) => {
+          e.preventDefault();
+          if (!activeDragElement) return;
+          const afterElement = getDragAfterElement(
+            assemblyLine,
+            e.clientX,
+            e.clientY,
+          );
+          if (afterElement == null) {
+            assemblyLine.appendChild(activeDragElement);
+          } else {
+            assemblyLine.insertBefore(activeDragElement, afterElement);
+          }
+        };
+        wordBank.ondragover = (e) => {
+          e.preventDefault();
+          if (!activeDragElement) return;
+          wordBank.appendChild(activeDragElement);
+        };
+      }
+
+      function getDragAfterElement(container, x, y) {
+        const draggableElements = [
+          ...container.querySelectorAll(".word-magnet:not(.dragging)"),
+        ];
+        if (draggableElements.length === 0) return null;
+        let minRowDistance = Number.POSITIVE_INFINITY;
+        draggableElements.forEach((child) => {
+          const box = child.getBoundingClientRect();
+          const rowDistance = Math.abs(y - (box.top + box.height / 2));
+          if (rowDistance < minRowDistance) {
+            minRowDistance = rowDistance;
+          }
+        });
+        const closestRowElements = draggableElements.filter((child) => {
+          const box = child.getBoundingClientRect();
+          return (
+            Math.abs(y - (box.top + box.height / 2)) <= minRowDistance + 25
+          );
+        });
+        return closestRowElements.reduce(
+          (closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = x - (box.left + box.width / 2);
+            if (offset < 0 && offset > closest.offset) {
+              return { offset: offset, element: child };
             } else {
-                music.pause(); btn.textContent = "🎵 音樂：OFF"; btn.style.backgroundColor = "#e67e22";
+              return closest;
             }
-        }
+          },
+          { offset: Number.NEGATIVE_INFINITY },
+        ).element;
+      }
 
-        // 系統變數大腦
-        let rawInputLines = [];
-        let currentIdx = 0;
-        let lives = 2; 
-        let timer = null;
-        let timeLeft = 0;
-        let currentLevelAnswers = []; 
-        let uniqueWordsPool = [];     
-        let score = 0;                
-        let totalQuestions = 0;       
-        let activeDragElement = null;
-
-        let isRolling = false;
-        let countdownTimer = null;
-        let finalRollResults = []; 
-
-        function openPauseMenu() {
-            if (document.getElementById('setup-screen').style.display !== 'none') return;
-            if (document.getElementById('roll-screen').style.display !== 'none') return;
-            if (document.getElementById('explain-screen').style.display !== 'none') return;
-            if (document.getElementById('result-screen').style.display !== 'none') return;
-            clearInterval(timer);
-            document.getElementById('pause-screen').style.display = 'flex';
-        }
-
-        function closePauseMenu() {
-            document.getElementById('pause-screen').style.display = 'none';
-            startTimer();
-        }
-
-        function triggerMenuRestart() {
-            document.getElementById('pause-screen').style.display = 'none';
-            restartGame();
-        }
-
-        function triggerMenuBack() {
-            document.getElementById('pause-screen').style.display = 'none';
-            goBackToSetup();
-        }
-
-        function initGame() {
-            const input = document.getElementById('import-input').value.trim();
-            if(!input) { alert("請輸入至少一個句子！"); return; }
-            
-            try {
-                const music = document.getElementById('bgm');
-                music.volume = 0.10;
-                if (music.paused) music.play().catch(e => console.log("音樂受阻"));
-            } catch (e) {}
-            
-            rawInputLines = input.split('\n').filter(s => s.trim().length > 0);
-            totalQuestions = rawInputLines.length;
-            currentIdx = 0;
-            score = 0;
-            lives = 2; 
-            
-            document.getElementById('setup-screen').style.display = 'none';
-            document.getElementById('result-screen').style.display = 'none';
-            document.getElementById('pause-screen').style.display = 'none';
-            updateLivesDisplay();
-
-            // 轉向叫號拉霸畫面
-            document.getElementById('roll-screen').style.display = 'flex';
-            document.getElementById('roll-container').innerHTML = '<div id="roll-box" style="font-size: 65px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000;">🎲 點擊開始全體抽選</div>';
-            document.getElementById('roll-action-btn').textContent = "開始全體抽號！";
-            document.getElementById('roll-action-btn').style.display = 'inline-block';
-            document.getElementById('roll-go-btn').style.display = 'none';
-        }
-
-        // 🎰 叫號拉霸與單獨重抽核心
-        function startRollingEffect() {
-            if (isRolling) return;
-            isRolling = true;
-
-            const min = parseInt(document.getElementById('roll-min').value) || 1;
-            const max = parseInt(document.getElementById('roll-max').value) || 30;
-            const count = parseInt(document.getElementById('roll-count').value) || 1;
-
-            if (min > max) { alert("最小座號不能大於最大座號！"); isRolling = false; return; }
-
-            document.getElementById('roll-action-btn').style.display = 'none';
-            document.getElementById('roll-go-btn').style.display = 'none';
-            
-            const container = document.getElementById('roll-container');
-            container.innerHTML = ''; 
-
-            let tempBoxes = [];
-            for(let i=0; i<count; i++) {
-                const box = document.createElement('div');
-                box.style = "font-size: 80px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000; min-width: 120px; text-align: center; line-height: 1.2;";
-                box.textContent = "--";
-                container.appendChild(box);
-                tempBoxes.push(box);
-            }
-
-            let times = 0;
-            const interval = setInterval(() => {
-                tempBoxes.forEach(box => {
-                    box.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
-                });
-                playSystemSound('tick');
-                times++;
-
-                if (times > 12) {
-                    clearInterval(interval);
-                    isRolling = false;
-
-                    finalRollResults = [];
-                    for (let i = 0; i < count; i++) {
-                        finalRollResults.push(Math.floor(Math.random() * (max - min + 1)) + min);
-                    }
-                    renderRollCards(); 
-                }
-            }, 80);
-        }
-
-        function renderRollCards() {
-            const container = document.getElementById('roll-container');
-            container.innerHTML = ''; 
-
-            finalRollResults.forEach((num, index) => {
-                const cardWrapper = document.createElement('div');
-                cardWrapper.style = "display: flex; flex-direction: column; align-items: center; gap: 12px; background: rgba(0,0,0,0.2); padding: 15px 25px; border-radius: 15px; min-width: 140px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.1);";
-
-                const numBox = document.createElement('div');
-                numBox.style = "font-size: 85px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000; line-height: 1.1;";
-                numBox.textContent = num;
-                cardWrapper.appendChild(numBox);
-
-                if (finalRollResults.length > 1) {
-                    const singleRetryBtn = document.createElement('button');
-                    singleRetryBtn.style = "padding: 6px 12px; font-size: 14px; background-color: #e67e22; border-radius: 8px; white-space: nowrap; font-weight: bold; min-width: 90px;";
-                    singleRetryBtn.textContent = "🔄 重抽此號";
-                    singleRetryBtn.onclick = () => rerollSingleStudent(index);
-                    cardWrapper.appendChild(singleRetryBtn);
-                }
-
-                container.appendChild(cardWrapper);
-            });
-
-            playSystemSound('correct');
-
-            const actionBtn = document.getElementById('roll-action-btn');
-            actionBtn.textContent = "🔄 全體重新抽號";
-            actionBtn.style.display = 'inline-block';
-            document.getElementById('roll-go-btn').style.display = 'inline-block';
-        }
-
-        function rerollSingleStudent(targetIndex) {
-            if (isRolling) return;
-            isRolling = true;
-
-            const min = parseInt(document.getElementById('roll-min').value) || 1;
-            const max = parseInt(document.getElementById('roll-max').value) || 30;
-            
-            const container = document.getElementById('roll-container');
-            const targetCard = container.children[targetIndex];
-            const numBox = targetCard.querySelector('div');
-            const btn = targetCard.querySelector('button');
-            
-            if(btn) btn.style.display = 'none'; 
-
-            let times = 0;
-            const interval = setInterval(() => {
-                numBox.textContent = Math.floor(Math.random() * (max - min + 1)) + min;
-                playSystemSound('tick');
-                times++;
-
-                if (times > 10) {
-                    clearInterval(interval);
-                    isRolling = false;
-                    const newNum = Math.floor(Math.random() * (max - min + 1)) + min;
-                    finalRollResults[targetIndex] = newNum;
-                    renderRollCards();
-                }
-            }, 80);
-        }
-
-        // 🚀 3. 退出叫號，解鎖全螢幕 321 倒數大機制
-        function exitRollAndStartGame() {
-            document.getElementById('roll-screen').style.display = 'none';
-            
-            let countdownOverlay = document.getElementById('countdown-overlay');
-            if (!countdownOverlay) {
-                countdownOverlay = document.createElement('div');
-                countdownOverlay.id = 'countdown-overlay';
-                countdownOverlay.style = "position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:300; display:flex; align-items:center; justify-content:center; font-size:120px; font-weight:900; color:var(--perfect-gold); text-shadow:4px 4px 0 #000;";
-                document.body.appendChild(countdownOverlay);
-            }
-            
-            countdownOverlay.style.display = 'flex';
-            countdownOverlay.textContent = "3";
-            playSystemSound('drag');
-
-            let num = 3;
-            countdownTimer = setInterval(() => {
-                num--;
-                if (num === 2) { countdownOverlay.textContent = "2"; playSystemSound('drag'); }
-                else if (num === 1) { countdownOverlay.textContent = "1"; playSystemSound('drag'); }
-                else if (num === 0) { countdownOverlay.textContent = "GO!🏃‍♂️"; playSystemSound('correct'); }
-                else {
-                    clearInterval(countdownTimer);
-                    countdownOverlay.style.display = 'none';
-                    loadLevel(); // 正式啟動關卡賽道！
-                }
-            }, 800);
-        }
-
-        function loadLevel() {
-            if(currentIdx >= totalQuestions) {
-                showFinalResults(true);
-                return;
-            }
-
-            const r = document.getElementById('runner');
-            const flagGoal = document.getElementById('flag-goal');
-            
-            if (window.innerWidth > 768) {
-                r.style.left = '100px';
-                flagGoal.style.right = '35px';
-            } else {
-                r.style.left = '50%';
-                flagGoal.style.right = '-120px';
-            }
-            flagGoal.style.opacity = '1';
-            flagGoal.style.transform = 'scale(1)';
-            flagGoal.classList.remove('flag-bounce');
-
-            const currentLine = rawInputLines[currentIdx].trim();
-            parseSlashSentence(currentLine);
-
-            timeLeft = 60; 
-            updateTimerDisplay();
-            startTimer();
-
-            const assemblyLine = document.getElementById('assembly-line');
-            const wordBank = document.getElementById('word-bank');
-            assemblyLine.innerHTML = '';
-            wordBank.innerHTML = '';
-
-            const shuffled = [...uniqueWordsPool].sort(() => Math.random() - 0.5);
-            shuffled.forEach(word => {
-                const magnet = document.createElement('div');
-                magnet.className = 'word-magnet';
-                magnet.textContent = word;
-                magnet.draggable = true;
-                bindDragAndTouchEvents(magnet);
-                wordBank.appendChild(magnet);
-            });
-
-            initContainerEvents();
-        }
-
-        function parseSlashSentence(line) {
-            let separator = line.includes('|') ? '|' : '/';
-            if (line.includes('|') || (line.includes('/') && !line.includes(' / '))) {
-                const alternatives = line.split(separator).map(s => s.trim());
-                currentLevelAnswers = alternatives.map(sentence => sentence.split(/\s+/));
-                uniqueWordsPool = [...currentLevelAnswers[0]];
-            } else {
-                const tokens = line.split(/\s+/);
-                currentLevelAnswers = [tokens];
-                uniqueWordsPool = [...tokens];
-            }
-        }
-
-        function checkAnswer() {
-            const currentWords = [...document.getElementById('assembly-line').querySelectorAll('.word-magnet')]
-                                .map(el => el.textContent.trim());
-            if (currentWords.length === 0) return;
-            const isCorrect = currentLevelAnswers.some(ansArr => {
-                if (currentWords.length !== ansArr.length) return false;
-                return JSON.stringify(currentWords) === JSON.stringify(ansArr);
-            });
-            if (isCorrect) handleSuccess();
-        }
-
-        function handleSuccess() {
-            clearInterval(timer);
-            score++; 
-            playSystemSound('correct');
-
-            const flagGoal = document.getElementById('flag-goal');
-            const runner = document.getElementById('runner');
-            
-            if (window.innerWidth <= 768) {
-                const targetRight = window.innerWidth / 2 - 25; 
-                flagGoal.style.right = targetRight + 'px';
-                setTimeout(() => {
-                    flagGoal.classList.add('flag-bounce');
-                    showFeedback("PERFECT!", "var(--success-green)");
-                    setTimeout(openExplainBufferWindow, 1200); 
-                }, 800);
-            } else {
-                const goalLeft = flagGoal.offsetLeft; 
-                runner.style.left = (goalLeft - 10) + 'px'; 
-                setTimeout(() => {
-                    flagGoal.classList.add('flag-bounce');
-                    showFeedback("PERFECT!", "var(--success-green)");
-                    setTimeout(openExplainBufferWindow, 1200); 
-                }, 800);
-            }
-        }
-
-        function openExplainBufferWindow() {
-            const standardString = rawInputLines[currentIdx].trim().replace(/\|/g, " 或是 ");
-            document.getElementById('explain-text').textContent = standardString;
-            document.getElementById('explain-screen').style.display = 'flex';
-        }
-
-        function triggerNextFromBuffer() {
-            document.getElementById('explain-screen').style.display = 'none';
-            currentIdx++;
-            if(currentIdx >= totalQuestions) {
-                showFinalResults(true);
-            } else {
-                // 自動跳轉到叫號畫面，進行下一題的抽點
-                document.getElementById('roll-screen').style.display = 'flex';
-                document.getElementById('roll-container').innerHTML = '<div id="roll-box" style="font-size: 65px; font-weight: 900; color: var(--perfect-gold); text-shadow: 3px 3px 0px #000;">🎲 點擊開始全體抽選</div>';
-                document.getElementById('roll-action-btn').textContent = "開始全體抽號！";
-                document.getElementById('roll-action-btn').style.display = 'inline-block';
-                document.getElementById('roll-go-btn').style.display = 'none';
-            }
-        }
-
-        function triggerRetryFromBuffer() {
-            document.getElementById('explain-screen').style.display = 'none';
-            score--; 
-            loadLevel(); // 原地刷題倒數重考
-        }
-
-        function triggerBackFromBuffer() {
-            document.getElementById('explain-screen').style.display = 'none';
-            goBackToSetup();
-        }
-
-        function handleFail(reason) {
-            clearInterval(timer);
-            lives--;
-            updateLivesDisplay();
-            playSystemSound('wrong'); 
-            showFeedback("WRONG!", "var(--error-red)");
-            tripRunner();
-
-            const assemblyLine = document.getElementById('assembly-line');
-            const standardCorrect = currentLevelAnswers[0]; 
-            assemblyLine.innerHTML = standardCorrect.map(w => `<div class="word-magnet" style="border-color:var(--perfect-gold); pointer-events:none;">${w}</div>`).join('');
-
-            if (lives < 0) {
-                setTimeout(() => { showFinalResults(false); }, 1800);
-            } else {
-                setTimeout(openExplainBufferWindow, 2000);
-            }
-        }
-
-        function showFinalResults(isWin) {
-            clearInterval(timer);
-            document.getElementById('bgm').pause();
-            const resultScreen = document.getElementById('result-screen');
-            const resultTitle = document.getElementById('result-title');
-            const scoreDisplay = document.getElementById('score-display');
-
-            if(isWin) {
-                resultTitle.textContent = "🎉 挑戰成功！";
-                resultTitle.style.color = "var(--success-green)";
-            } else {
-                resultTitle.textContent = "❌ GAME OVER";
-                resultTitle.style.color = "var(--error-red)";
-            }
-            scoreDisplay.textContent = `最終得分：${score} / ${totalQuestions} 題`;
-            resultScreen.style.display = 'flex';
-        }
-
-        function restartGame() {
-            currentIdx = 0;
-            score = 0;
-            lives = 2;
-            document.getElementById('result-screen').style.display = 'none';
-            initGame(); 
-        }
-
-        function goBackToSetup() {
-            document.getElementById('result-screen').style.display = 'none';
-            document.getElementById('setup-screen').style.display = 'flex';
-            try {
-                const music = document.getElementById('bgm');
-                music.volume = 0.30;
-                if(music.paused) music.play();
-            } catch(e){}
-        }
-
-        function startTimer() {
-            if(timer) clearInterval(timer);
-            timer = setInterval(() => {
-                timeLeft--;
-                updateTimerDisplay();
-                if(timeLeft <= 5 && timeLeft > 0) playSystemSound('tick'); 
-                if(timeLeft <= 0) handleFail("TIME OUT!");
-            }, 1000);
-        }
-
-        function updateTimerDisplay() {
-            const timerEl = document.getElementById('timer');
-            if (timerEl) {
-                timerEl.textContent = `⏱️ Time Left: ${timeLeft}s`;
-                timerEl.classList.remove('timer-warning', 'timer-danger');
-                if(timeLeft <= 10) timerEl.classList.add('timer-warning');
-                if(timeLeft <= 5) timerEl.classList.add('timer-danger');
-            }
-        }
-
-        function updateLivesDisplay() {
-            document.getElementById('lives').textContent = "❤️".repeat(Math.max(0, lives)) + "💔".repeat(Math.max(0, 2 - lives));
-        }
-
-        function showFeedback(text, color) {
-            const f = document.getElementById('feedback-text');
-            f.textContent = text;
-            f.style.color = color;
-            f.style.display = 'block';
-            setTimeout(() => f.style.display = 'none', 1500);
-        }
-
-        function tripRunner() {
-            const r = document.getElementById('runner');
-            r.style.transform = 'rotate(-90deg) translateY(20px)';
-            setTimeout(() => { r.style.transform = 'none'; }, 2000);
-        }
-
-        function bindDragAndTouchEvents(element) {
-            element.addEventListener('dragstart', () => {
-                element.classList.add('dragging'); activeDragElement = element;
-                playSystemSound('drag');
-            });
-            element.addEventListener('dragend', () => {
-                element.classList.remove('dragging'); activeDragElement = null;
-                playSystemSound('drop'); checkAnswer();
-            });
-            element.addEventListener('touchstart', (e) => {
-                element.classList.add('dragging'); activeDragElement = element;
-                playSystemSound('drag');
-            }, {passive: true});
-            element.addEventListener('touchmove', (e) => {
-                e.preventDefault();
-                const touch = e.touches[0];
-                element.style.position = 'fixed';
-                element.style.left = (touch.clientX - 40) + 'px';
-                element.style.top = (touch.clientY - 20) + 'px';
-                element.style.zIndex = '1000';
-                const assemblyLine = document.getElementById('assembly-line');
-                const rect = assemblyLine.getBoundingClientRect();
-                if(touch.clientX >= rect.left && touch.clientX <= rect.right &&
-                   touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
-                    const afterElement = getDragAfterElement(assemblyLine, touch.clientX, touch.clientY);
-                    if (afterElement == null) { assemblyLine.appendChild(element); } 
-                    else { assemblyLine.insertBefore(element, afterElement); }
-                }
-            }, {passive: false});
-            element.addEventListener('touchend', () => {
-                element.classList.remove('dragging');
-                element.style.position = 'static'; element.style.zIndex = 'auto';
-                const wordBank = document.getElementById('word-bank');
-                const assemblyLine = document.getElementById('assembly-line');
-                if (!assemblyLine.contains(element)) { wordBank.appendChild(element); }
-                activeDragElement = null; playSystemSound('drop'); checkAnswer();
-            });
-        }
-
-        function initContainerEvents() {
-            const assemblyLine = document.getElementById('assembly-line');
-            const wordBank = document.getElementById('word-bank');
-            assemblyLine.ondragover = (e) => {
-                e.preventDefault(); if(!activeDragElement) return;
-                const afterElement = getDragAfterElement(assemblyLine, e.clientX, e.clientY);
-                if (afterElement == null) { assemblyLine.appendChild(activeDragElement); } 
-                else { assemblyLine.insertBefore(activeDragElement, afterElement); }
-            };
-            wordBank.ondragover = (e) => { e.preventDefault(); if(!activeDragElement) return; wordBank.appendChild(activeDragElement); };
-        }
-
-        function getDragAfterElement(container, x, y) {
-            const draggableElements = [...container.querySelectorAll('.word-magnet:not(.dragging)')];
-            if (draggableElements.length === 0) return null;
-            let minRowDistance = Number.POSITIVE_INFINITY;
-            draggableElements.forEach(child => {
-                const box = child.getBoundingClientRect();
-                const rowDistance = Math.abs(y - (box.top + box.height / 2));
-                if (rowDistance < minRowDistance) { minRowDistance = rowDistance; }
-            });
-            const closestRowElements = draggableElements.filter(child => {
-                const box = child.getBoundingClientRect();
-                return Math.abs(y - (box.top + box.height / 2)) <= minRowDistance + 25;
-            });
-            return closestRowElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = x - (box.left + box.width / 2);
-                if (offset < 0 && offset > closest.offset) { return { offset: offset, element: child }; } 
-                else { return closest; }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
-        }
-
-        // 💡 內建清脆網頁仿晶片音效系統
-        function playSystemSound(type) {
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                const ctx = new AudioContext();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                if (type === 'correct') {
-                    osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
-                    gain.gain.setValueAtTime(0.3, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-                    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.15);
-                } else if (type === 'wrong') {
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, ctx.currentTime);
-                    osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.25);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-                    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.25);
-                } else if (type === 'tick') {
-                    osc.type = 'triangle'; osc.frequency.setValueAtTime(550, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.1, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
-                    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.05);
-                } else if (type === 'drag') {
-                    osc.type = 'sine'; osc.frequency.setValueAtTime(750, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.12, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.03);
-                    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.03);
-                } else if (type === 'drop') {
-                    osc.type = 'triangle'; osc.frequency.setValueAtTime(380, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.18, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
-                    osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.04);
-                }
-            } catch(e){}
-        }
+      // 💡 內建清脆網頁仿晶片音效系統
+      function playSystemSound(type) {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          if (type === "correct") {
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(
+              880,
+              ctx.currentTime + 0.15,
+            );
+            gain.gain.setValueAtTime(0.3, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+              0.01,
+              ctx.currentTime + 0.15,
+            );
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.15);
+          } else if (type === "wrong") {
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(180, ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.25);
+            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+              0.01,
+              ctx.currentTime + 0.25,
+            );
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.25);
+          } else if (type === "tick") {
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(550, ctx.currentTime);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+              0.01,
+              ctx.currentTime + 0.05,
+            );
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.05);
+          } else if (type === "drag") {
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(750, ctx.currentTime);
+            gain.gain.setValueAtTime(0.12, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+              0.01,
+              ctx.currentTime + 0.03,
+            );
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.03);
+          } else if (type === "drop") {
+            osc.type = "triangle";
+            osc.frequency.setValueAtTime(380, ctx.currentTime);
+            gain.gain.setValueAtTime(0.18, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(
+              0.01,
+              ctx.currentTime + 0.04,
+            );
+            osc.start(ctx.currentTime);
+            osc.stop(ctx.currentTime + 0.04);
+          }
+        } catch (e) {}
+      }
     </script>
 
-    <div id="pause-screen" style="display: none;">
-        <h2>⏸️ 遊戲暫停</h2>
-        <div class="btn-vertical-group">
-            <button class="btn-success" onclick="closePauseMenu()">繼續遊戲</button>
-            <button style="background-color: #e67e22;" onclick="triggerMenuRestart()">重新開始</button>
-            <button class="btn-secondary" onclick="triggerMenuBack()">返回標題頁</button>
-        </div>
+    <div id="pause-screen" style="display: none">
+      <h2>⏸️ 遊戲暫停</h2>
+      <div class="btn-vertical-group">
+        <button class="btn-success" onclick="closePauseMenu()">繼續遊戲</button>
+        <button
+          style="background-color: #e67e22"
+          onclick="triggerMenuRestart()"
+        >
+          重新開始
+        </button>
+        <button class="btn-secondary" onclick="triggerMenuBack()">
+          返回標題頁
+        </button>
+      </div>
     </div>
-
-</body>
+  </body>
 </html>
