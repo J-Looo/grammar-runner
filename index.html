@@ -1716,28 +1716,50 @@ The dog barks at the mailman every day.</textarea
         initContainerEvents();
       }
 
-     // 🟢 語塊優化版：優先抽離 ( ) 括號內的所有文字作為獨立磁鐵，降低低成就學生負載
+// 🟢 萬能語塊大腦：徹底修復外層包覆打結，100% 脫去括號並精確聚合語塊
       function parseSlashSentence(line) {
         let separator = line.includes("|") ? "|" : "/";
-        
-        // 🎯 特製正則表達式：優先抓取括號內的文字 / 或者是抓取沒括號的單字
-        const chunkRegex = /\(([^)]+)\)|[^\s]+/g;
 
-        // 核心切塊小幫手：負責把單一句子依據「括號語塊優先」規則切成陣列
+        // 🎯 智慧條碼掃描器：手動解析字串，完美應對任何複雜的括號組合
         const tokenize = (sentence) => {
           let tokens = [];
-          let match;
-          while ((match = chunkRegex.exec(sentence)) !== null) {
-            // match[1] 代表被括號 () 包住的內部文字，match[0] 代表一般單字
-            if (match[1]) {
-              tokens.push(match[1].trim()); // 自動脫掉括號，只保留內文語塊
+          let currentChunk = "";
+          let inChunks = false;
+
+          for (let i = 0; i < sentence.length; i++) {
+            let char = sentence[i];
+
+            if (char === "(") {
+              // 遇見左括號：先把前面累積的普通單字切出來清空
+              if (!inChunks && currentChunk.trim()) {
+                tokens = tokens.concat(currentChunk.trim().split(/\s+/));
+                currentChunk = "";
+              }
+              inChunks = true; // 開啟語塊黏合護盾
+            } else if (char === ")") {
+              // 遇見右括號：護盾關閉，將整條語塊推入磁鐵庫
+              if (inChunks) {
+                if (currentChunk.trim()) tokens.push(currentChunk.trim());
+                currentChunk = "";
+                inChunks = false;
+              }
             } else {
-              tokens.push(match[0].trim());
+              // 累積字元
+              currentChunk += char;
             }
           }
-          // 重置正則表達式的指針，防止下一次判斷失準
-          chunkRegex.lastIndex = 0;
-          return tokens;
+
+          // 結尾收線：處理最後殘留的普通單字
+          if (currentChunk.trim()) {
+            if (inChunks) {
+              tokens.push(currentChunk.trim());
+            } else {
+              tokens = tokens.concat(currentChunk.trim().split(/\s+/));
+            }
+          }
+
+          // 貼心過濾防空機制
+          return tokens.filter(t => t.length > 0);
         };
 
         if (line.includes("|") || (line.includes("/") && !line.includes(" / "))) {
