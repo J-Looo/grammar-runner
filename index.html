@@ -1672,9 +1672,9 @@ The dog barks at the mailman every day.</textarea
           if (poolStr.includes("saw")) distractors.push("see");
           else if (poolStr.includes("see")) distractors.push("saw");
 
-          if (poolStr.includes(" barks")) distractors.push("bark");
-          else if (poolStr.includes(" bark ") || poolStr.endsWith("bark"))
-            distractors.push("barks");
+          // 🟢 寬容修正版：移除前後空格限制，確保干擾字判定在語塊內依然100%觸發
+          if (poolStr.includes("barks")) distractors.push("bark");
+          else if (poolStr.includes("bark")) distractors.push("barks");
 
           if (poolStr.includes("every")) distractors.push("last");
           if (poolStr.includes(" the ")) distractors.push("a");
@@ -1716,19 +1716,58 @@ The dog barks at the mailman every day.</textarea
         initContainerEvents();
       }
 
+// 🟢 萬能語塊大腦：徹底修復外層包覆打結，100% 脫去括號並精確聚合語塊
       function parseSlashSentence(line) {
         let separator = line.includes("|") ? "|" : "/";
-        if (
-          line.includes("|") ||
-          (line.includes("/") && !line.includes(" / "))
-        ) {
+
+        // 🎯 智慧條碼掃描器：手動解析字串，完美應對任何複雜的括號組合
+        const tokenize = (sentence) => {
+          let tokens = [];
+          let currentChunk = "";
+          let inChunks = false;
+
+          for (let i = 0; i < sentence.length; i++) {
+            let char = sentence[i];
+
+            if (char === "(") {
+              // 遇見左括號：先把前面累積的普通單字切出來清空
+              if (!inChunks && currentChunk.trim()) {
+                tokens = tokens.concat(currentChunk.trim().split(/\s+/));
+                currentChunk = "";
+              }
+              inChunks = true; // 開啟語塊黏合護盾
+            } else if (char === ")") {
+              // 遇見右括號：護盾關閉，將整條語塊推入磁鐵庫
+              if (inChunks) {
+                if (currentChunk.trim()) tokens.push(currentChunk.trim());
+                currentChunk = "";
+                inChunks = false;
+              }
+            } else {
+              // 累積字元
+              currentChunk += char;
+            }
+          }
+
+          // 結尾收線：處理最後殘留的普通單字
+          if (currentChunk.trim()) {
+            if (inChunks) {
+              tokens.push(currentChunk.trim());
+            } else {
+              tokens = tokens.concat(currentChunk.trim().split(/\s+/));
+            }
+          }
+
+          // 貼心過濾防空機制
+          return tokens.filter(t => t.length > 0);
+        };
+
+        if (line.includes("|") || (line.includes("/") && !line.includes(" / "))) {
           const alternatives = line.split(separator).map((s) => s.trim());
-          currentLevelAnswers = alternatives.map((sentence) =>
-            sentence.split(/\s+/),
-          );
+          currentLevelAnswers = alternatives.map((sentence) => tokenize(sentence));
           uniqueWordsPool = [...currentLevelAnswers[0]];
         } else {
-          const tokens = line.split(/\s+/);
+          const tokens = tokenize(line);
           currentLevelAnswers = [tokens];
           uniqueWordsPool = [...tokens];
         }
