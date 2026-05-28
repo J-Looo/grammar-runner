@@ -124,6 +124,27 @@
         height: auto;
         vertical-align: middle;
         image-rendering: pixelated;
+        /* 🏃‍♂️ 跑步完全體：上下彈跳，充滿動態活力 */
+        animation: pixel-running 0.45s infinite linear;
+        transform-origin: bottom center;
+      }
+
+      @keyframes pixel-running {
+        0% {
+          transform: translateY(0) scaleY(1) rotate(0deg);
+        }
+        25% {
+          transform: translateY(-5px) scaleY(0.98) rotate(2deg);
+        }
+        50% {
+          transform: translateY(0) scaleY(1.02) rotate(0deg);
+        }
+        75% {
+          transform: translateY(-4px) scaleY(0.98) rotate(-1deg);
+        }
+        100% {
+          transform: translateY(0) scaleY(1) rotate(0deg);
+        }
       }
 
       #flag-goal {
@@ -394,29 +415,6 @@
         margin-bottom: 30px;
       }
 
-      @keyframes blink {
-        50% {
-          opacity: 0.3;
-        }
-      }
-      @keyframes flag-wave {
-        from {
-          transform: scale(1);
-        }
-        to {
-          transform: scale(1.3) rotate(10deg);
-        }
-      }
-      @keyframes heartbeat {
-        0%,
-        100% {
-          transform: scale(1);
-        }
-        50% {
-          transform: scale(1.03);
-        }
-      }
-
       @media (max-width: 768px) {
         #top-section {
           height: 35% !important;
@@ -469,14 +467,6 @@
           gap: 8px;
           padding-bottom: 30px;
           touch-action: pan-y;
-        }
-        /* 📱 針對小畫面/視窗收縮時的標題與按鈕瘦身防撞機制 */
-        .setup-header-container h1 {
-          font-size: 24px !important; /* 縮小標題字體，防止撞到按鈕 */
-        }
-        #bgm-toggle-btn {
-          padding: 4px 10px !important;
-          font-size: 11px !important; /* 縮小按鈕 */
         }
       }
     </style>
@@ -687,7 +677,7 @@
           resize: vertical;
         "
       >
-Sandy saw a boy pick up the trash from the floor. | Sandy saw a boy picking up the trash from the floor.
+(Sandy saw) (a boy) (pick up) (the trash) (from the floor.)
 She goes to the park every morning.
 The dog barks at the mailman every day.</textarea
       >
@@ -1066,17 +1056,8 @@ The dog barks at the mailman every day.</textarea
     <div id="top-section">
       <div id="status-bar">
         <div id="timer">⏱️ Time Left: --s</div>
-        <div
-          style="
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-left: auto;
-          "
-        >
-          <div id="menu-btn" onclick="openPauseMenu()" style="margin: 0">
-            ⚙️ 選單
-          </div>
+        <div style="display: flex; align-items: center; gap: 15px; margin-left: auto;">
+          <div id="menu-btn" onclick="openPauseMenu()" style="margin: 0;">⚙️ 選單</div>
           <div id="lives">❤️❤️</div>
         </div>
       </div>
@@ -1238,22 +1219,19 @@ The dog barks at the mailman every day.</textarea
         const music = document.getElementById("bgm");
         if (music) {
           music.volume = 0.3;
-          music
-            .play()
-            .then(() => {
-              const track = document.getElementById("bgm-switch-track");
-              const thumb = document.getElementById("bgm-switch-thumb");
-              const text = document.getElementById("bgm-switch-text");
-
-              if (track && thumb && text) {
-                track.style.backgroundColor = "var(--success-green)";
-                thumb.style.left = "4px";
-                text.textContent = "ON";
-                text.style.right = "8px";
-                text.style.left = "auto";
-              }
-            })
-            .catch((e) => console.log("解鎖聲音"));
+          music.play().then(() => {
+            const track = document.getElementById("bgm-switch-track");
+            const thumb = document.getElementById("bgm-switch-thumb");
+            const text = document.getElementById("bgm-switch-text");
+            
+            if (track && thumb && text) {
+              track.style.backgroundColor = "var(--success-green)";
+              thumb.style.left = "4px";
+              text.textContent = "ON";
+              text.style.right = "8px";
+              text.style.left = "auto";
+            }
+          }).catch((e) => console.log("解鎖聲音"));
         }
       }
 
@@ -1267,13 +1245,13 @@ The dog barks at the mailman every day.</textarea
         const track = document.getElementById("bgm-switch-track");
         const thumb = document.getElementById("bgm-switch-thumb");
         const text = document.getElementById("bgm-switch-text");
-
+        
         if (music && music.paused) {
           music.volume = 0.3;
           music
             .play()
             .then(() => {
-              isMusicEnabled = true;
+              isMusicEnabled = true; 
               if (track && thumb && text) {
                 track.style.backgroundColor = "var(--success-green)";
                 thumb.style.left = "4px";
@@ -1300,23 +1278,20 @@ The dog barks at the mailman every day.</textarea
           isMusicEnabled = false;
           music.pause();
           track.style.backgroundColor = "#e67e22";
-          thumb.style.left = "39px";
+          thumb.style.left = "39px"; 
           text.textContent = "OFF";
-          text.style.left = "8px";
+          text.style.left = "8px"; 
           text.style.right = "auto";
         } else {
           isMusicEnabled = true;
           music.volume = 0.3;
-          music
-            .play()
-            .then(() => {
-              track.style.backgroundColor = "var(--success-green)";
-              thumb.style.left = "4px";
-              text.textContent = "ON";
-              text.style.right = "8px";
-              text.style.left = "auto";
-            })
-            .catch((e) => console.log("播放受阻"));
+          music.play().then(() => {
+            track.style.backgroundColor = "var(--success-green)";
+            thumb.style.left = "4px";
+            text.textContent = "ON";
+            text.style.right = "8px";
+            text.style.left = "auto";
+          }).catch((e) => console.log("播放受阻"));
         }
       }
 
@@ -1362,6 +1337,7 @@ The dog barks at the mailman every day.</textarea
         document.getElementById("pause-screen").style.display = "flex";
       }
 
+      // 修正過渡邏輯：只有在整組題組完成後才進行切換
       function closePauseMenu() {
         document.getElementById("pause-screen").style.display = "none";
         startTimer();
@@ -1377,7 +1353,54 @@ The dog barks at the mailman every day.</textarea
         goBackToSetup();
       }
 
-      style = document.getElementById("shuffle-toggle")?.checked;
+      // 🟢 萬能語塊掃描大腦：徹底修復外層包覆打結，100% 脫去括號並聚合語塊
+      function parseSlashSentence(line) {
+        let separator = line.includes("|") ? "|" : "/";
+
+        const tokenize = (sentence) => {
+          let tokens = [];
+          let currentChunk = "";
+          let inChunks = false;
+
+          for (let i = 0; i < sentence.length; i++) {
+            let char = sentence[i];
+            if (char === "(") {
+              if (!inChunks && currentChunk.trim()) {
+                tokens = tokens.concat(currentChunk.trim().split(/\s+/));
+                currentChunk = "";
+              }
+              inChunks = true;
+            } else if (char === ")") {
+              if (inChunks) {
+                if (currentChunk.trim()) tokens.push(currentChunk.trim());
+                currentChunk = "";
+                inChunks = false;
+              }
+            } else {
+              currentChunk += char;
+            }
+          }
+          if (currentChunk.trim()) {
+            if (inChunks) {
+              tokens.push(currentChunk.trim());
+            } else {
+              tokens = tokens.concat(currentChunk.trim().split(/\s+/));
+            }
+          }
+          return tokens.filter(t => t.length > 0);
+        };
+
+        if (line.includes("|") || (line.includes("/") && !line.includes(" / "))) {
+          const alternatives = line.split(separator).map((s) => s.trim());
+          currentLevelAnswers = alternatives.map((sentence) => tokenize(sentence));
+          uniqueWordsPool = [...currentLevelAnswers[0]];
+        } else {
+          const tokens = tokenize(line);
+          currentLevelAnswers = [tokens];
+          uniqueWordsPool = [...tokens];
+        }
+      }
+
       function initGame() {
         const input = document.getElementById("import-input").value.trim();
         if (!input) {
@@ -1658,64 +1681,48 @@ The dog barks at the mailman every day.</textarea
         wordBank.innerHTML = "";
 
         let finalWordsPool = [...uniqueWordsPool];
-        const distractorEnabled =
-          document.getElementById("distractor-toggle").checked;
+        const distractorEnabled = document.getElementById("distractor-toggle")?.checked;
 
-// 🟢 語塊感應干擾大腦：自動判定「單字 vs 語塊」，100% 複製長度外觀實施完美欺騙
-        if (distractorEnabled) {
+        // 🟢 智慧型語塊感應干擾項目生成大腦 (包含空值守護保險絲)
+        if (distractorEnabled && finalWordsPool && finalWordsPool.length > 0) {
           let distractors = [];
           
-          // 智慧判定小幫手：檢查某個關鍵字是「獨立存在」還是「被包在某個多字語塊裡」
-          // 如果是被包在語塊裡，就回傳那個完整的語塊物件；否則回傳單字本身
           const findSourceContainer = (targetKeyword) => {
             return finalWordsPool.find(w => {
+              if (!w) return false;
               const lowerW = w.toLowerCase();
               return lowerW === targetKeyword || (lowerW.includes(targetKeyword) && lowerW.split(/\s+/).length > 1);
             });
           };
 
-          // 核心偽裝機器：如果來源是語塊，就精確替換語塊內的核心關鍵字，保持外觀完全一致！
           const pushFakeTrap = (keyword, fakeReplacement) => {
             const container = findSourceContainer(keyword);
             if (container) {
-              // 檢查這個來源到底是「多字語塊」還是「單一單字」
               if (container.split(/\s+/).length > 1) {
-                // 🚀 語塊防破綻機制：利用正則表達式，把語塊裡的關鍵字神不知鬼不覺地換掉
                 const regex = new RegExp(keyword, "i");
                 const fakeChunk = container.replace(regex, fakeReplacement);
                 distractors.push(fakeChunk);
               } else {
-                // 如果原本只是普通單字，就正常出單一干擾字
                 distractors.push(fakeReplacement);
               }
             }
           };
 
-          // 🎯 智慧型干擾庫判定
-          // 1. 感應 saw ➡️ 生成 see 或對應語塊 (例如將 "pick up" 變體，或處理看見 saw 的句子)
           pushFakeTrap("saw", "see");
           pushFakeTrap("see", "saw");
-
-          // 2. 感應 pick up 語塊裡面的動詞時態陷阱
           pushFakeTrap("pick up", "picked up");
           pushFakeTrap("picking", "picked");
-
-          // 3. 感應三單動詞與原形動詞語塊
           pushFakeTrap("barks", "bark");
           pushFakeTrap("bark", "barks");
           pushFakeTrap("goes", "go");
-          
-          // 4. 感應冠詞/時間等常見語塊細節
           pushFakeTrap("the trash", "a trash");
           pushFakeTrap("every", "last");
 
-          // 🔒 保底防空機制：如果以上特製陷阱都沒觸發，就依據出題型態補上對應的保底字
           if (distractors.length === 0) {
             const defaultTraps = ["is", "to", "at", "on", "do", "does"];
-            let validDefaults = defaultTraps.filter(t => !finalWordsPool.map(w => w.toLowerCase()).includes(t));
+            let validDefaults = defaultTraps.filter(t => !finalWordsPool.map(w => w ? w.toLowerCase() : "").includes(t));
             if (validDefaults.length > 0) {
               const randomTrap = validDefaults[Math.floor(Math.random() * validDefaults.length)];
-              // 隨機選一個正確磁鐵，如果目前全場都是語塊，保底也試著模仿長度
               const sample = finalWordsPool[0] || "";
               if (sample.split(/\s+/).length > 1) {
                 distractors.push(sample.split(/\s+/)[0] + " " + randomTrap);
@@ -1725,10 +1732,12 @@ The dog barks at the mailman every day.</textarea
             }
           }
 
-          // 限制最多只挑出 2 個干擾項混入牌堆
           distractors = distractors.slice(0, 2);
           finalWordsPool = finalWordsPool.concat(distractors);
-        } 
+        }
+
+        const shuffled = [...finalWordsPool].sort(() => Math.random() - 0.5);
+        shuffled.forEach((word) => {
           const magnet = document.createElement("div");
           magnet.className = "word-magnet";
           magnet.textContent = word;
@@ -1737,63 +1746,6 @@ The dog barks at the mailman every day.</textarea
           wordBank.appendChild(magnet);
         });
         initContainerEvents();
-      }
-
-// 🟢 萬能語塊大腦：徹底修復外層包覆打結，100% 脫去括號並精確聚合語塊
-      function parseSlashSentence(line) {
-        let separator = line.includes("|") ? "|" : "/";
-
-        // 🎯 智慧條碼掃描器：手動解析字串，完美應對任何複雜的括號組合
-        const tokenize = (sentence) => {
-          let tokens = [];
-          let currentChunk = "";
-          let inChunks = false;
-
-          for (let i = 0; i < sentence.length; i++) {
-            let char = sentence[i];
-
-            if (char === "(") {
-              // 遇見左括號：先把前面累積的普通單字切出來清空
-              if (!inChunks && currentChunk.trim()) {
-                tokens = tokens.concat(currentChunk.trim().split(/\s+/));
-                currentChunk = "";
-              }
-              inChunks = true; // 開啟語塊黏合護盾
-            } else if (char === ")") {
-              // 遇見右括號：護盾關閉，將整條語塊推入磁鐵庫
-              if (inChunks) {
-                if (currentChunk.trim()) tokens.push(currentChunk.trim());
-                currentChunk = "";
-                inChunks = false;
-              }
-            } else {
-              // 累積字元
-              currentChunk += char;
-            }
-          }
-
-          // 結尾收線：處理最後殘留的普通單字
-          if (currentChunk.trim()) {
-            if (inChunks) {
-              tokens.push(currentChunk.trim());
-            } else {
-              tokens = tokens.concat(currentChunk.trim().split(/\s+/));
-            }
-          }
-
-          // 貼心過濾防空機制
-          return tokens.filter(t => t.length > 0);
-        };
-
-        if (line.includes("|") || (line.includes("/") && !line.includes(" / "))) {
-          const alternatives = line.split(separator).map((s) => s.trim());
-          currentLevelAnswers = alternatives.map((sentence) => tokenize(sentence));
-          uniqueWordsPool = [...currentLevelAnswers[0]];
-        } else {
-          const tokens = tokenize(line);
-          currentLevelAnswers = [tokens];
-          uniqueWordsPool = [...tokens];
-        }
       }
 
       function checkAnswer() {
@@ -1810,14 +1762,13 @@ The dog barks at the mailman every day.</textarea
         if (isCorrect) handleSuccess();
       }
 
-      // 🟢 響亮加分版：注入專屬完美音效，震撼過關
       function handleSuccess() {
         clearInterval(timer);
         const music = document.getElementById("bgm");
         if (music) music.playbackRate = 1.0;
         score++;
-
-        // 🎯 核心優化：呼叫特製的「perfect」超響亮雙音階加分音效
+        
+        // 🎯 核心調用：呼叫特製的 PERFECT 清脆電玩雙音階高分音效！
         playSystemSound("perfect");
 
         const flagGoal = document.getElementById("flag-goal");
@@ -1842,11 +1793,11 @@ The dog barks at the mailman every day.</textarea
         }
       }
 
-      // 修正 Hamburger Writing 框架用詞：將 Intro 修正為 Head
       function openExplainBufferWindow() {
         const standardString = rawInputLines[currentIdx]
           .trim()
-          .replace(/\|/g, " 或是 ");
+          .replace(/\|/g, " 或是 ")
+          .replace(/[()]/g, ""); // 看詳解時貼心脫掉括號，還原句子美觀
         document.getElementById("explain-text").textContent = standardString;
         document.getElementById("explain-screen").style.display = "flex";
       }
@@ -1940,7 +1891,7 @@ The dog barks at the mailman every day.</textarea
       function goBackToSetup() {
         document.getElementById("result-screen").style.display = "none";
         document.getElementById("setup-screen").style.display = "flex";
-
+        
         const track = document.getElementById("bgm-switch-track");
         const thumb = document.getElementById("bgm-switch-thumb");
         const text = document.getElementById("bgm-switch-text");
@@ -2051,7 +2002,7 @@ The dog barks at the mailman every day.</textarea
         setTimeout(() => (f.style.display = "none"), 1500);
       }
 
-      // 修正第一人稱教學語義邏輯：將 Wash your face 修正為 Wash my face
+      // 修正為第一人稱教學邏輯
       function bindDragAndTouchEvents(element) {
         element.addEventListener("dragstart", () => {
           element.classList.add("dragging");
@@ -2190,15 +2141,9 @@ The dog barks at the mailman every day.</textarea
           if (type === "correct") {
             osc.type = "sine";
             osc.frequency.setValueAtTime(523.25, ctx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(
-              880,
-              ctx.currentTime + 0.15,
-            );
+            osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
             gain.gain.setValueAtTime(0.3, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(
-              0.01,
-              ctx.currentTime + 0.15,
-            );
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.15);
           } else if (type === "wrong") {
@@ -2206,40 +2151,28 @@ The dog barks at the mailman every day.</textarea
             osc.frequency.setValueAtTime(180, ctx.currentTime);
             osc.frequency.linearRampToValueAtTime(100, ctx.currentTime + 0.25);
             gain.gain.setValueAtTime(0.2, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(
-              0.01,
-              ctx.currentTime + 0.25,
-            );
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.25);
           } else if (type === "tick") {
             osc.type = "triangle";
             osc.frequency.setValueAtTime(550, ctx.currentTime);
             gain.gain.setValueAtTime(0.1, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(
-              0.01,
-              ctx.currentTime + 0.05,
-            );
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.05);
           } else if (type === "drag") {
             osc.type = "sine";
             osc.frequency.setValueAtTime(750, ctx.currentTime);
             gain.gain.setValueAtTime(0.12, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(
-              0.01,
-              ctx.currentTime + 0.03,
-            );
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.03);
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.03);
           } else if (type === "drop") {
             osc.type = "triangle";
             osc.frequency.setValueAtTime(380, ctx.currentTime);
             gain.gain.setValueAtTime(0.18, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(
-              0.01,
-              ctx.currentTime + 0.04,
-            );
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.04);
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.04);
           } else if (type === "whistle") {
@@ -2253,19 +2186,11 @@ The dog barks at the mailman every day.</textarea
           } else if (type === "perfect") {
             // 🎯 特製 PERFECT 超響亮高頻復古加分音效（閃爍雙音階）
             osc.type = "sine";
-            // 第一個清脆高音
-            osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
-            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); // E5
-            // 第二個沖天極致高音
-            osc.frequency.exponentialRampToValueAtTime(
-              1318.51,
-              ctx.currentTime + 0.25,
-            ); // E6
+            osc.frequency.setValueAtTime(523.25, ctx.currentTime); 
+            osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.08); 
+            osc.frequency.exponentialRampToValueAtTime(1318.51, ctx.currentTime + 0.25); 
             gain.gain.setValueAtTime(0.35, ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(
-              0.01,
-              ctx.currentTime + 0.25,
-            );
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
             osc.start(ctx.currentTime);
             osc.stop(ctx.currentTime + 0.25);
           }
@@ -2280,9 +2205,7 @@ The dog barks at the mailman every day.</textarea
         }
         localStorage.setItem("grammar_runner_pool", inputData);
         playSystemSound("correct");
-        alert(
-          "✨ 題庫已成功儲存至這台電腦！下次上課點擊「載入上次題庫」即可一秒還原。",
-        );
+        alert("✨ 題庫已成功儲存至這台電腦！下次上課點擊「載入上次題庫」即可一秒還原。");
       }
 
       function loadBankFromLocal() {
@@ -2301,15 +2224,8 @@ The dog barks at the mailman every day.</textarea
       <h2>⏸️ 遊戲暫停</h2>
       <div class="btn-vertical-group">
         <button class="btn-success" onclick="closePauseMenu()">繼續遊戲</button>
-        <button
-          style="background-color: #e67e22"
-          onclick="triggerMenuRestart()"
-        >
-          重新開始
-        </button>
-        <button class="btn-secondary" onclick="triggerMenuBack()">
-          返回標題頁
-        </button>
+        <button style="background-color: #e67e22" onclick="triggerMenuRestart()">重新開始</button>
+        <button class="btn-secondary" onclick="triggerMenuBack()">返回標題頁</button>
       </div>
     </div>
   </body>
