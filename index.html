@@ -1672,9 +1672,9 @@ The dog barks at the mailman every day.</textarea
           if (poolStr.includes("saw")) distractors.push("see");
           else if (poolStr.includes("see")) distractors.push("saw");
 
-          if (poolStr.includes(" barks")) distractors.push("bark");
-          else if (poolStr.includes(" bark ") || poolStr.endsWith("bark"))
-            distractors.push("barks");
+          // 🟢 寬容修正版：移除前後空格限制，確保干擾字判定在語塊內依然100%觸發
+          if (poolStr.includes("barks")) distractors.push("bark");
+          else if (poolStr.includes("bark")) distractors.push("barks");
 
           if (poolStr.includes("every")) distractors.push("last");
           if (poolStr.includes(" the ")) distractors.push("a");
@@ -1716,19 +1716,36 @@ The dog barks at the mailman every day.</textarea
         initContainerEvents();
       }
 
+     // 🟢 語塊優化版：優先抽離 ( ) 括號內的所有文字作為獨立磁鐵，降低低成就學生負載
       function parseSlashSentence(line) {
         let separator = line.includes("|") ? "|" : "/";
-        if (
-          line.includes("|") ||
-          (line.includes("/") && !line.includes(" / "))
-        ) {
+        
+        // 🎯 特製正則表達式：優先抓取括號內的文字 / 或者是抓取沒括號的單字
+        const chunkRegex = /\(([^)]+)\)|[^\s]+/g;
+
+        // 核心切塊小幫手：負責把單一句子依據「括號語塊優先」規則切成陣列
+        const tokenize = (sentence) => {
+          let tokens = [];
+          let match;
+          while ((match = chunkRegex.exec(sentence)) !== null) {
+            // match[1] 代表被括號 () 包住的內部文字，match[0] 代表一般單字
+            if (match[1]) {
+              tokens.push(match[1].trim()); // 自動脫掉括號，只保留內文語塊
+            } else {
+              tokens.push(match[0].trim());
+            }
+          }
+          // 重置正則表達式的指針，防止下一次判斷失準
+          chunkRegex.lastIndex = 0;
+          return tokens;
+        };
+
+        if (line.includes("|") || (line.includes("/") && !line.includes(" / "))) {
           const alternatives = line.split(separator).map((s) => s.trim());
-          currentLevelAnswers = alternatives.map((sentence) =>
-            sentence.split(/\s+/),
-          );
+          currentLevelAnswers = alternatives.map((sentence) => tokenize(sentence));
           uniqueWordsPool = [...currentLevelAnswers[0]];
         } else {
-          const tokens = line.split(/\s+/);
+          const tokens = tokenize(line);
           currentLevelAnswers = [tokens];
           uniqueWordsPool = [...tokens];
         }
