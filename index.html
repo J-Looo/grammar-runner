@@ -1661,51 +1661,74 @@ The dog barks at the mailman every day.</textarea
         const distractorEnabled =
           document.getElementById("distractor-toggle").checked;
 
+// 🟢 語塊感應干擾大腦：自動判定「單字 vs 語塊」，100% 複製長度外觀實施完美欺騙
         if (distractorEnabled) {
           let distractors = [];
-          const poolStr = finalWordsPool.join(" ").toLowerCase();
+          
+          // 智慧判定小幫手：檢查某個關鍵字是「獨立存在」還是「被包在某個多字語塊裡」
+          // 如果是被包在語塊裡，就回傳那個完整的語塊物件；否則回傳單字本身
+          const findSourceContainer = (targetKeyword) => {
+            return finalWordsPool.find(w => {
+              const lowerW = w.toLowerCase();
+              return lowerW === targetKeyword || (lowerW.includes(targetKeyword) && lowerW.split(/\s+/).length > 1);
+            });
+          };
 
-          if (poolStr.includes("goes")) distractors.push("go");
-          else if (poolStr.includes("go") && !poolStr.includes("goes"))
-            distractors.push("goes");
+          // 核心偽裝機器：如果來源是語塊，就精確替換語塊內的核心關鍵字，保持外觀完全一致！
+          const pushFakeTrap = (keyword, fakeReplacement) => {
+            const container = findSourceContainer(keyword);
+            if (container) {
+              // 檢查這個來源到底是「多字語塊」還是「單一單字」
+              if (container.split(/\s+/).length > 1) {
+                // 🚀 語塊防破綻機制：利用正則表達式，把語塊裡的關鍵字神不知鬼不覺地換掉
+                const regex = new RegExp(keyword, "i");
+                const fakeChunk = container.replace(regex, fakeReplacement);
+                distractors.push(fakeChunk);
+              } else {
+                // 如果原本只是普通單字，就正常出單一干擾字
+                distractors.push(fakeReplacement);
+              }
+            }
+          };
 
-          if (poolStr.includes("saw")) distractors.push("see");
-          else if (poolStr.includes("see")) distractors.push("saw");
+          // 🎯 智慧型干擾庫判定
+          // 1. 感應 saw ➡️ 生成 see 或對應語塊 (例如將 "pick up" 變體，或處理看見 saw 的句子)
+          pushFakeTrap("saw", "see");
+          pushFakeTrap("see", "saw");
 
-          // 🟢 寬容修正版：移除前後空格限制，確保干擾字判定在語塊內依然100%觸發
-          if (poolStr.includes("barks")) distractors.push("bark");
-          else if (poolStr.includes("bark")) distractors.push("barks");
+          // 2. 感應 pick up 語塊裡面的動詞時態陷阱
+          pushFakeTrap("pick up", "picked up");
+          pushFakeTrap("picking", "picked");
 
-          if (poolStr.includes("every")) distractors.push("last");
-          if (poolStr.includes(" the ")) distractors.push("a");
-          if (poolStr.includes(" picking")) distractors.push("picked");
+          // 3. 感應三單動詞與原形動詞語塊
+          pushFakeTrap("barks", "bark");
+          pushFakeTrap("bark", "barks");
+          pushFakeTrap("goes", "go");
+          
+          // 4. 感應冠詞/時間等常見語塊細節
+          pushFakeTrap("the trash", "a trash");
+          pushFakeTrap("every", "last");
 
+          // 🔒 保底防空機制：如果以上特製陷阱都沒觸發，就依據出題型態補上對應的保底字
           if (distractors.length === 0) {
-            const defaultTraps = [
-              "is",
-              "to",
-              "at",
-              "on",
-              "he",
-              "she",
-              "do",
-              "does",
-            ];
-            let validDefaults = defaultTraps.filter(
-              (t) => !finalWordsPool.map((w) => w.toLowerCase()).includes(t),
-            );
-            if (validDefaults.length > 0)
-              distractors.push(
-                validDefaults[Math.floor(Math.random() * validDefaults.length)],
-              );
+            const defaultTraps = ["is", "to", "at", "on", "do", "does"];
+            let validDefaults = defaultTraps.filter(t => !finalWordsPool.map(w => w.toLowerCase()).includes(t));
+            if (validDefaults.length > 0) {
+              const randomTrap = validDefaults[Math.floor(Math.random() * validDefaults.length)];
+              // 隨機選一個正確磁鐵，如果目前全場都是語塊，保底也試著模仿長度
+              const sample = finalWordsPool[0] || "";
+              if (sample.split(/\s+/).length > 1) {
+                distractors.push(sample.split(/\s+/)[0] + " " + randomTrap);
+              } else {
+                distractors.push(randomTrap);
+              }
+            }
           }
 
+          // 限制最多只挑出 2 個干擾項混入牌堆
           distractors = distractors.slice(0, 2);
           finalWordsPool = finalWordsPool.concat(distractors);
-        }
-
-        const shuffled = [...finalWordsPool].sort(() => Math.random() - 0.5);
-        shuffled.forEach((word) => {
+        } 
           const magnet = document.createElement("div");
           magnet.className = "word-magnet";
           magnet.textContent = word;
