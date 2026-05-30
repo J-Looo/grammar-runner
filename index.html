@@ -1734,18 +1734,36 @@ The dog barks at the mailman every day.</textarea
         }
       }
 
+      // 🟢 雙向解鎖版：徹底修復干擾字卡死卡住的 Bug，允許隨時拖入與拖出
       function checkAnswer() {
+        const assemblyLine = document.getElementById("assembly-line");
         const currentWords = [
-          ...document
-            .getElementById("assembly-line")
-            .querySelectorAll(".word-magnet"),
+          ...assemblyLine.querySelectorAll(".word-magnet"),
         ].map((el) => el.textContent.trim());
+
+        // 🔒 如果組裝線空了，正常返回，不做任何懲罰或卡死
         if (currentWords.length === 0) return;
+
+        // 檢查是否完全答對
         const isCorrect = currentLevelAnswers.some((ansArr) => {
           if (currentWords.length !== ansArr.length) return false;
           return JSON.stringify(currentWords) === JSON.stringify(ansArr);
         });
-        if (isCorrect) handleSuccess();
+
+        if (isCorrect) {
+          handleSuccess();
+        } else {
+          // 🎯 核心補正機制：如果沒答對，我們也要強制確保「所有的磁鐵（包含干擾字）」
+          // 在組裝線上依然具備百分之百的「可移動性」，絕不鎖死任何人的拖拽權限！
+          const allMagnets = assemblyLine.querySelectorAll(".word-magnet");
+          allMagnets.forEach((magnet) => {
+            if (magnet.style.position === "fixed") {
+              // 修正觸控拖拽釋放後的殘留定位，防止它卡在格子邊緣
+              magnet.style.position = "static";
+              magnet.style.zIndex = "auto";
+            }
+          });
+        }
       }
 
       // 🟢 響亮加分版：注入專屬完美音效，震撼過關
@@ -2059,9 +2077,11 @@ The dog barks at the mailman every day.</textarea
         });
       }
 
+      // 🟢 雙向暢通版：徹底打通組裝線與磁鐵庫的雙向收容通道
       function initContainerEvents() {
         const assemblyLine = document.getElementById("assembly-line");
         const wordBank = document.getElementById("word-bank");
+
         assemblyLine.ondragover = (e) => {
           e.preventDefault();
           if (!activeDragElement) return;
@@ -2076,9 +2096,15 @@ The dog barks at the mailman every day.</textarea
             assemblyLine.insertBefore(activeDragElement, afterElement);
           }
         };
+
+        // 🎯 核心優化：確保干擾字被拉回磁鐵庫時，100% 導通、絕不沒收
         wordBank.ondragover = (e) => {
           e.preventDefault();
           if (!activeDragElement) return;
+
+          // 強制洗掉任何可能導致卡死的殘留定位
+          activeDragElement.style.position = "static";
+          activeDragElement.style.zIndex = "auto";
           wordBank.appendChild(activeDragElement);
         };
       }
